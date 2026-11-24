@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f3ed">
+  <title>Project 2 | Cell Model Explained</title>
+  <style>
+    :root {
+      --paper: #f4f3ed; --white: #fffefa; --ink: #172a2b; --muted: #536767;
+      --line: #d6ded8; --green: #13745b; --green-dark: #0a4d3d; --mint: #d8eee4;
+      --coral: #d56a50; --coral-pale: #f8e3db; --gold: #e8bd59; --blue: #557f91;
+      --shadow: 0 18px 45px rgba(20, 43, 41, .08); --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font: 16px/1.58 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: inherit; }
+    .topbar { position: sticky; top: 0; z-index: 5; display:flex; justify-content:space-between; align-items:center; gap:22px; padding:14px clamp(18px,5vw,76px); background:rgba(244,243,237,.94); border-bottom:1px solid rgba(214,222,216,.8); backdrop-filter:blur(14px); }
+    .brand { display:flex; align-items:center; gap:11px; color:var(--green-dark); font-size:14px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+    .brand-mark { width:28px; height:28px; display:grid; place-items:center; border-radius:9px; color:white; background:var(--green); font-size:15px; }
+    nav { display:flex; gap:18px; overflow:auto; scrollbar-width:none; }
+    nav a { text-decoration:none; color:var(--muted); font-size:13px; font-weight:700; white-space:nowrap; }
+    nav a:hover, nav a:focus-visible { color:var(--green); }
+    .wrap { width:min(1140px, calc(100% - 40px)); margin:auto; }
+    .hero { padding:82px 0 64px; display:grid; grid-template-columns:1.05fr .95fr; align-items:center; gap:45px; }
+    .eyebrow { color:var(--green); text-transform:uppercase; letter-spacing:.14em; font-size:12px; font-weight:850; }
+    h1 { max-width:690px; margin:14px 0 17px; font-size:clamp(42px,6.7vw,76px); line-height:.99; letter-spacing:-.055em; }
+    h1 span { color:var(--green); }
+    .hero p { max-width:620px; margin:0; color:var(--muted); font-size:19px; }
+    .hero-note { display:inline-flex; align-items:center; gap:9px; margin-top:23px; padding:9px 13px; border:1px solid var(--line); border-radius:999px; color:#425856; background:#ffffff9c; font-size:12px; font-weight:750; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--coral); }
+    .hero-art { min-height:300px; padding:28px; position:relative; overflow:hidden; border:1px solid #d4ded6; border-radius:32px; background:linear-gradient(145deg,#e3f1e9,#edf0e7 60%,#f9eadd); box-shadow:var(--shadow); }
+    .art-label { display:flex; justify-content:space-between; color:#47645c; font-size:11px; font-weight:850; letter-spacing:.12em; text-transform:uppercase; }
+    .art-cells { position:absolute; inset:68px 22px 22px; }
+    .cell { position:absolute; width:80px; height:70px; border-radius:48% 52% 45% 55%; border:2px solid #5d8d78; background:radial-gradient(ellipse at 42% 38%,#d9af8e 0 9%,#d4a387 10% 18%,#9bc9ad 20% 65%,#b9dfc6 66%); opacity:.77; transform:rotate(var(--r)); }
+    .cell:after { content:""; position:absolute; width:12px; height:12px; border-radius:50%; background:#845e6a; top:28px; left:35px; }
+    .cell:nth-child(1){left:7%;top:18%;--r:11deg}.cell:nth-child(2){left:37%;top:3%;--r:-9deg}.cell:nth-child(3){left:69%;top:19%;--r:19deg}.cell:nth-child(4){left:22%;top:54%;--r:-16deg}.cell:nth-child(5){left:55%;top:56%;--r:8deg}.cell:nth-child(6){left:79%;top:59%;--r:-11deg}
+    .cell-ring { position:absolute; width:88px; height:88px; border:2px solid var(--coral); border-radius:50%; transform:translate(-50%,-50%); }
+    .cell-ring:after { content:""; position:absolute; width:9px;height:9px;border-radius:50%;background:var(--coral);left:calc(50% - 4px);top:calc(50% - 4px); }
+    .ring1{left:15%;top:36%}.ring2{left:45%;top:20%}.ring3{left:77%;top:37%}.ring4{left:30%;top:72%}.ring5{left:63%;top:73%}
+    section { padding:58px 0; scroll-margin-top:82px; }
+    .section-head { max-width:760px; margin-bottom:26px; }
+    .section-head h2 { margin:8px 0 9px; font-size:clamp(29px,4vw,43px); letter-spacing:-.04em; line-height:1.08; }
+    .section-head p { margin:0; color:var(--muted); font-size:17px; }
+    .surface { background:var(--white); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .pipeline { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; align-items:stretch; }
+    .step { position:relative; padding:18px 17px; background:var(--white); border:1px solid var(--line); border-radius:17px; }
+    .step:not(:last-child):after { content:"→"; position:absolute; top:37px; right:-17px; z-index:2; width:23px; height:23px; display:grid; place-items:center; border-radius:50%; color:white; background:var(--green); font-size:14px; font-weight:900; }
+    .step-num { width:27px;height:27px;display:grid;place-items:center;border-radius:9px;color:var(--green-dark);background:var(--mint);font-size:12px;font-weight:900; }
+    .step h3 { margin:13px 0 4px; font-size:16px; }
+    .step p { margin:0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .callout { display:flex; gap:13px; align-items:flex-start; margin-top:17px; padding:16px 18px; border-radius:16px; background:#edf5ef; color:#29483f; }
+    .callout strong { color:var(--green-dark); }
+    .callout .icon { font-size:20px; line-height:1.2; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .panel { padding:24px; }
+    .panel h3 { margin:0 0 8px; font-size:20px; letter-spacing:-.02em; }
+    .panel p { color:var(--muted); margin:0 0 12px; }
+    .check-list { list-style:none; margin:14px 0 0; padding:0; display:grid; gap:10px; }
+    .check-list li { display:flex; gap:10px; align-items:flex-start; color:#405856; font-size:14px; }
+    .check-list li:before { content:"✓"; flex:0 0 20px; width:20px;height:20px;display:grid;place-items:center;border-radius:50%;background:var(--mint);color:var(--green);font-weight:900;font-size:12px; }
+    .diagram { display:grid; grid-template-columns:1fr 60px 1fr; gap:12px; align-items:center; padding:19px; background:#f7f7f1; border-radius:16px; }
+    .diagram-node { min-height:113px; padding:17px; border-radius:15px; background:white; border:1px solid var(--line); }
+    .diagram-node small { color:var(--green); font-size:10px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+    .diagram-node strong { display:block; margin:7px 0 4px; font-size:16px; }
+    .diagram-node span { color:var(--muted); font-size:12px; }
+    .diagram-arrow { text-align:center; color:var(--coral); font-size:27px; font-weight:900; }
+    .outputs { display:grid; grid-template-columns:repeat(5,1fr); gap:11px; margin-top:17px; }
+    .output { padding:14px; border-top:3px solid var(--green); background:#f7f8f2; border-radius:8px 8px 13px 13px; }
+    .output b { display:block; font-size:13px; }
+    .output span { display:block; margin-top:4px; color:var(--muted); font-size:12px; line-height:1.4; }
+    .playground { display:grid; grid-template-columns:1.35fr .65fr; gap:20px; padding:21px; }
+    .toy-svg-wrap { background:#eff3eb; border-radius:17px; padding:11px; border:1px solid #dce5dc; }
+    #toySvg { display:block; width:100%; height:auto; }
+    .toy-copy { padding:8px 5px; }
+    .toy-copy h3 { margin:0 0 7px; font-size:21px; }
+    .toy-copy p { margin:0 0 16px; color:var(--muted); font-size:14px; }
+    .range-row { display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:13px; font-weight:800; }
+    input[type=range] { width:100%; margin:15px 0; accent-color:var(--green); }
+    .toy-stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+    .toy-stat { padding:11px; border-radius:12px; background:#f2f5ef; }
+    .toy-stat span { display:block; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:800; }
+    .toy-stat b { display:block; margin-top:3px; font-size:20px; }
+    .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; color:#4d625d; font-size:11px; }
+    .legend i { display:inline-block; width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px; }
+    .legend .gt{background:var(--gold)} .legend .hit{background:var(--green)} .legend .false{background:var(--coral)}
+    .network-layout { display:grid; grid-template-columns:.85fr 1.15fr; gap:20px; }
+    .network-visual { padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:12px; background:#eaf2ec; border-radius:18px; border:1px solid #d2e1d6; }
+    .network-block { padding:15px; min-height:100px; background:var(--white); border-radius:14px; border:1px solid var(--line); }
+    .network-block strong { display:block; font-size:14px; }
+    .network-block span { color:var(--muted); font-size:12px; }
+    .network-block.wide { grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; gap:10px; min-height:70px; }
+    .network-block .shape-count { padding:6px 9px; border-radius:999px; color:var(--green-dark); background:var(--mint); font-size:11px; font-weight:900; white-space:nowrap; }
+    .loss-box { padding:20px; margin-top:15px; border-radius:16px; background:#183b36; color:#f8f7ef; }
+    .equation { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:clamp(16px,2.2vw,23px); line-height:1.65; overflow-wrap:anywhere; }
+    .equation strong { color:#9cddbb; }
+    .loss-box p { margin:8px 0 0; color:#d2e5da; font-size:13px; }
+    .loop { display:grid; grid-template-columns:repeat(4,1fr); gap:11px; }
+    .loop-btn { text-align:left; min-height:123px; padding:16px; border:1px solid var(--line); border-radius:16px; background:var(--white); color:var(--ink); cursor:pointer; transition:.18s ease; }
+    .loop-btn:hover,.loop-btn[aria-pressed=true] { transform:translateY(-2px); border-color:var(--green); box-shadow:0 8px 24px rgba(19,116,91,.12); }
+    .loop-btn .n { color:var(--green); font-size:11px; font-weight:900; letter-spacing:.1em; }
+    .loop-btn strong { display:block; margin:7px 0 3px; font-size:15px; }
+    .loop-btn small { color:var(--muted); font-size:12px; }
+    .loop-detail { min-height:112px; margin-top:13px; padding:19px 21px; border-left:4px solid var(--coral); background:#fff7f2; border-radius:0 14px 14px 0; }
+    .loop-detail strong { display:block; margin-bottom:4px; }
+    .loop-detail p { margin:0; color:#53615e; font-size:14px; }
+    .folds { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:18px 0; }
+    .fold { padding:15px 10px; text-align:center; background:#f6f6f0; border:1px solid var(--line); border-radius:13px; }
+    .fold b { display:block; font-size:13px; }
+    .fold span { display:block; color:var(--muted); font-size:11px; }
+    .fold.validation { background:#fdebe4; border-color:#f2c9bb; }
+    .fold.validation b { color:#9b442f; }
+    .metric-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:11px; }
+    .metric { padding:17px; background:var(--white); border:1px solid var(--line); border-radius:15px; }
+    .metric b { display:block; color:var(--green-dark); font-size:17px; }
+    .metric span { display:block; margin-top:5px; color:var(--muted); font-size:12px; }
+    .source-list { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+    details { padding:15px 17px; background:var(--white); border:1px solid var(--line); border-radius:14px; }
+    summary { cursor:pointer; color:var(--green-dark); font-weight:850; font-size:14px; }
+    details p { color:var(--muted); font-size:13px; margin:10px 0 0; }
+    code { color:#176149; background:#e9f1eb; border-radius:5px; padding:1px 5px; font-size:.92em; }
+    .warning { padding:20px 22px; border:1px solid #efc7b8; border-radius:16px; background:var(--coral-pale); color:#57392f; }
+    .warning strong { color:#833f2d; }
+    .warning p { margin:6px 0 0; font-size:14px; }
+    footer { padding:35px 0 50px; color:var(--muted); font-size:12px; }
+    .footer-line { height:1px; margin-bottom:20px; background:var(--line); }
+    @media (max-width:880px) { .hero{grid-template-columns:1fr;gap:25px;padding-top:53px}.hero-art{min-height:260px}.pipeline{grid-template-columns:1fr 1fr}.step:after{display:none}.outputs{grid-template-columns:repeat(2,1fr)}.playground,.network-layout{grid-template-columns:1fr}.loop{grid-template-columns:repeat(2,1fr)}.metric-grid{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:560px) { nav{gap:13px}.brand{font-size:12px}.wrap{width:min(100% - 28px,1140px)}.hero{padding:43px 0}.hero p{font-size:16px}.hero-art{min-height:225px;padding:17px}.cell{width:60px;height:55px}.cell:after{left:25px;top:21px}.cell-ring{width:70px;height:70px}.pipeline,.two-col,.source-list{grid-template-columns:1fr}.diagram{grid-template-columns:1fr}.diagram-arrow{transform:rotate(90deg)}.playground{padding:13px}.loop{grid-template-columns:1fr 1fr}.loop-btn{min-height:118px;padding:12px}.metric-grid{grid-template-columns:1fr 1fr}.folds{grid-template-columns:repeat(5,minmax(52px,1fr));overflow:auto}.fold{padding:11px 5px}.toy-stat{padding:8px}.toy-stat b{font-size:17px} }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">P2</span> CELL MODEL GUIDE</div>
+    <nav aria-label="Main navigation">
+      <a href="#pipeline">Pipeline</a><a href="#playground">Toy demo</a><a href="#network">Model</a><a href="#training">Training</a><a href="#validation">Validation</a><a href="#stage2">Stage 2</a>
+    </nav>
+  </header>
+  <main>
+    <div class="wrap">
+      <section class="hero" id="top">
+        <div>
+          <div class="eyebrow">A code walkthrough for Project 2</div>
+          <h1>One model to find cells.<br><span>Two stages to use it.</span></h1>
+          <p>Explore how annotated microscope images become cell-centre predictions, approximate masks, bounding boxes and whole-slide counts.</p>
+          <div class="hero-note"><span class="dot"></span>Teaching demo only · no confidential images or CSVs</div>
+        </div>
+        <div class="hero-art" aria-label="Schematic illustration of cells and predicted centres">
+          <div class="art-label"><span>Input tissue patch</span><span>Learned centres</span></div>
+          <div class="art-cells"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell-ring ring1"></i><i class="cell-ring ring2"></i><i class="cell-ring ring3"></i><i class="cell-ring ring4"></i><i class="cell-ring ring5"></i></div>
+        </div>
+      </section>
+
+      <section id="pipeline">
+        <div class="section-head"><div class="eyebrow">01 · The big picture</div><h2>From slide pixels to cell-level results</h2><p>The pipeline uses one compact network. “Stage 1” and “Stage 2” describe two ways of using its predictions, not two separately trained networks.</p></div>
+        <div class="pipeline">
+          <article class="step"><div class="step-num">1</div><h3>Read images + labels</h3><p>Each CSV gives cell-centre coordinates and optional caliper measurements.</p></article>
+          <article class="step"><div class="step-num">2</div><h3>Make patches</h3><p>Large slides are split into 512 × 512 training crops with border-aware coverage.</p></article>
+          <article class="step"><div class="step-num">3</div><h3>Train one model</h3><p>CentroidLite learns where centres and cell foreground should be.</p></article>
+          <article class="step"><div class="step-num">4</div><h3>Stage 1: detect</h3><p>Predict cells patch by patch: centres, scores, masks and boxes.</p></article>
+          <article class="step"><div class="step-num">5</div><h3>Stage 2: stitch</h3><p>Overlap crops across a slide, merge repeated detections and save a global result.</p></article>
+        </div>
+        <div class="callout"><span class="icon">↳</span><div><strong>Why two stages?</strong> A network sees a manageable crop. Stage 2 handles the bookkeeping needed to turn many crop predictions into one slide-wide map and count.</div></div>
+      </section>
+
+      <section id="data">
+        <div class="section-head"><div class="eyebrow">02 · Data and targets</div><h2>What one training example contains</h2><p>The code converts each annotated cell into several learning targets. This gives the small model more useful signals than a single “cell / not cell” label.</p></div>
+        <div class="two-col">
+          <article class="surface panel">
+            <h3>Input and annotations</h3><p>A 512 × 512 RGB patch is paired with CSV rows that contain pixel coordinates.</p>
+            <ul class="check-list"><li><span><b>Centroid X/Y:</b> the labelled centre of each cell.</span></li><li><span><b>Max/min caliper:</b> used to estimate a radius as <code>0.5 × √(max × min)</code>, under the current assumption that calipers are full axis lengths.</span></li><li><span><b>Approximate mask:</b> a filled disk around each centre, clipped to the image boundary.</span></li></ul>
+          </article>
+          <article class="surface panel">
+            <h3>Border-aware patching</h3><p><code>edge_anchored_patch_starts()</code> shifts the final crop to the far image edge instead of leaving a strip uncovered.</p>
+            <div class="diagram"><div class="diagram-node"><small>Before</small><strong>Uncovered edge</strong><span>A final cell can fall outside every crop.</span></div><div class="diagram-arrow">→</div><div class="diagram-node"><small>In this code</small><strong>Edge-anchored crop</strong><span>Overlap is assigned an ownership “core” so a labelled cell is counted once in validation.</span></div></div>
+          </article>
+        </div>
+        <div class="outputs">
+          <div class="output"><b>Centre heatmap</b><span>A small Gaussian hill around each labelled centre.</span></div>
+          <div class="output"><b>Foreground map</b><span>Which pixels belong to any approximate cell mask.</span></div>
+          <div class="output"><b>Centre offsets</b><span>Sub-grid correction to place a centre between output pixels.</span></div>
+          <div class="output"><b>Radius target</b><span>Estimated cell size, scaled into a learnable range.</span></div>
+          <div class="output"><b>Regression mask</b><span>Marks output positions where offset and radius targets exist.</span></div>
+        </div>
+      </section>
+
+      <section id="playground">
+        <div class="section-head"><div class="eyebrow">03 · Interactive toy example</div><h2>A confidence cutoff trades precision for recall</h2><p>Every predicted centre has a confidence score. Raise the cutoff to accept fewer predictions; lower it to recover weaker candidates, including possible false alarms.</p></div>
+        <div class="surface playground">
+          <div>
+            <div class="toy-svg-wrap"><svg id="toySvg" viewBox="0 0 520 340" role="img" aria-label="Schematic cells, labelled centres, and thresholded predictions"><defs><pattern id="grain" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="4" cy="8" r="1.5" fill="#bfd0bf"/><circle cx="18" cy="19" r="1.2" fill="#d1b7a0"/></pattern></defs><rect x="0" y="0" width="520" height="340" rx="16" fill="#e8eee4"/><rect x="0" y="0" width="520" height="340" rx="16" fill="url(#grain)"/><g fill="#acd0b5" stroke="#618a72" stroke-width="2" opacity=".78"><ellipse cx="100" cy="90" rx="39" ry="32"/><ellipse cx="220" cy="150" rx="43" ry="36"/><ellipse cx="355" cy="88" rx="37" ry="34"/><ellipse cx="420" cy="260" rx="45" ry="37"/><ellipse cx="250" cy="290" rx="38" ry="32"/><ellipse cx="165" cy="230" rx="42" ry="34"/><ellipse cx="340" cy="185" rx="39" ry="34"/></g><g fill="#805e6d" opacity=".78"><circle cx="100" cy="90" r="7"/><circle cx="220" cy="150" r="7"/><circle cx="355" cy="88" r="7"/><circle cx="420" cy="260" r="7"/><circle cx="250" cy="290" r="7"/><circle cx="165" cy="230" r="7"/><circle cx="340" cy="185" r="7"/></g><g id="truthLayer"></g><g id="predLayer"></g></svg></div>
+            <div class="legend"><span><i class="gt"></i>labelled centre</span><span><i class="hit"></i>accepted matched prediction</span><span><i class="false"></i>accepted unmatched prediction</span></div>
+          </div>
+          <div class="toy-copy">
+            <h3>Move the cutoff</h3><p>These points are invented for teaching. This is not an output from the trained model. A prediction counts as a match here if it is within 22 schematic pixels of one unused labelled centre.</p>
+            <div class="range-row"><label for="threshold">Confidence threshold</label><output id="thresholdValue">0.20</output></div>
+            <input id="threshold" type="range" min="5" max="95" value="20" step="1" aria-label="Confidence threshold">
+            <div class="toy-stat-grid"><div class="toy-stat"><span>Precision</span><b id="toyP">—</b></div><div class="toy-stat"><span>Recall</span><b id="toyR">—</b></div><div class="toy-stat"><span>F1</span><b id="toyF1">—</b></div></div>
+            <p style="font-size:12px;margin-top:12px"><b id="toyCounts">—</b><br>TP = matched; FP = extra prediction; FN = labelled cell missed.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="network">
+        <div class="section-head"><div class="eyebrow">04 · The network</div><h2>CentroidLite predicts five maps at once</h2><p>The compact network trades a large object-detection stack for a small set of dense maps. Its smaller architecture aims to reduce compute; actual speed still depends on hardware, data loading and cell density.</p></div>
+        <div class="network-layout">
+          <div class="network-visual surface" aria-label="Network block diagram">
+            <div class="network-block"><strong>512 × 512 RGB</strong><span>Values scaled to 0–1</span></div>
+            <div class="network-block"><strong>Average pool ×2</strong><span>Smaller feature map</span></div>
+            <div class="network-block"><strong>3 × 3 convolution</strong><span>24 feature channels</span></div>
+            <div class="network-block"><strong>Depthwise residual blocks</strong><span>One wider-context, dilated block</span></div>
+            <div class="network-block wide"><div><strong>1 × 1 prediction head</strong><span>Per-location cell and size signals</span></div><span class="shape-count">5 output maps</span></div>
+          </div>
+          <div>
+            <div class="outputs" style="grid-template-columns:1fr 1fr;margin-top:0">
+              <div class="output"><b>1 · Centre confidence</b><span>How likely is a cell centre at this output location?</span></div>
+              <div class="output"><b>2 · Foreground</b><span>How likely is this location part of a cell?</span></div>
+              <div class="output"><b>3–4 · X/Y offsets</b><span>Fine-tune the centre within the 2-pixel output grid.</span></div>
+              <div class="output"><b>5 · Radius</b><span>Predict a normalized size, then scale it to pixels.</span></div>
+            </div>
+            <div class="callout"><span class="icon">i</span><div><strong>Small output map:</strong> the 512-pixel patch is downsampled to 256 × 256, so each prediction point represents roughly a 2 × 2 pixel area. The learned offsets help recover more precise centres.</div></div>
+          </div>
+        </div>
+        <div class="loss-box"><div class="eyebrow" style="color:#9cddbb">The training objective</div><div class="equation"><strong>L total</strong> = L centre + L foreground + 2 × L offset + L radius + 0.10 × L count</div><p>Centre uses a focal-style positive/negative penalty with hard-negative mining. Foreground combines weighted binary cross-entropy and Dice loss. The count term compares heatmap mass with target-centre density. These terms have different scales, so raw total loss is not directly comparable with an older code version.</p></div>
+      </section>
+
+      <section id="training">
+        <div class="section-head"><div class="eyebrow">05 · Core training loop</div><h2>What happens during one batch</h2><p>Choose a step to see what the notebook is doing. The same order repeats for each batch in the epoch.</p></div>
+        <div class="loop" role="group" aria-label="Training loop steps">
+          <button class="loop-btn" data-loop="0" aria-pressed="true"><span class="n">STEP 01</span><strong>Load a batch</strong><small>Images + target maps</small></button>
+          <button class="loop-btn" data-loop="1" aria-pressed="false"><span class="n">STEP 02</span><strong>Forward pass</strong><small>Five maps per patch</small></button>
+          <button class="loop-btn" data-loop="2" aria-pressed="false"><span class="n">STEP 03</span><strong>Measure errors</strong><small>Sum the loss parts</small></button>
+          <button class="loop-btn" data-loop="3" aria-pressed="false"><span class="n">STEP 04</span><strong>Backpropagate</strong><small>Compute gradients</small></button>
+          <button class="loop-btn" data-loop="4" aria-pressed="false"><span class="n">STEP 05</span><strong>Update weights</strong><small>AdamW + clipping</small></button>
+          <button class="loop-btn" data-loop="5" aria-pressed="false"><span class="n">STEP 06</span><strong>Save progress</strong><small>Resume-safe checkpoint</small></button>
+          <button class="loop-btn" data-loop="6" aria-pressed="false"><span class="n">STEP 07</span><strong>Validate</strong><small>Held-out images</small></button>
+          <button class="loop-btn" data-loop="7" aria-pressed="false"><span class="n">STEP 08</span><strong>Keep best model</strong><small>F1, then MAE</small></button>
+        </div>
+        <div class="loop-detail" aria-live="polite"><strong id="loopTitle">Load a batch</strong><p id="loopBody">The dataset returns a list of image tensors and matching dictionaries of cell targets. Images are augmented in training; validation data is left unchanged.</p></div>
+        <div class="callout"><span class="icon">↻</span><div><strong>Recoverable training:</strong> the loop writes progress checkpoints during an epoch, including model and optimizer state, batch order and the next sample position. If a batch exceeds MPS memory, the code can halve the batch size and retry from saved progress.</div></div>
+      </section>
+
+      <section id="validation">
+        <div class="section-head"><div class="eyebrow">06 · Validation</div><h2>Test on images the fold did not train on</h2><p>Splits are grouped by image, so patches from one slide do not leak into both training and validation.</p></div>
+        <div class="folds" aria-label="Five-fold cross-validation diagram"><div class="fold validation"><b>Fold 1</b><span>held out</span></div><div class="fold"><b>Fold 2</b><span>train</span></div><div class="fold"><b>Fold 3</b><span>train</span></div><div class="fold"><b>Fold 4</b><span>train</span></div><div class="fold"><b>Fold 5</b><span>train</span></div></div>
+        <p style="color:var(--muted);font-size:13px">The held-out fold rotates five times. Each fold is capped at 5 epochs in the current setup. After cross-validation, the code refits on all eligible training patches for up to 5 epochs, using the median best-fold epoch count.</p>
+        <div class="metric-grid" style="margin-top:18px">
+          <div class="metric"><b>Precision</b><span>Of predicted cells, how many match a labelled centre? Low precision often means extra detections.</span></div>
+          <div class="metric"><b>Recall</b><span>Of labelled cells, how many did the model find? Low recall means missed cells.</span></div>
+          <div class="metric"><b>F1 / F0.5</b><span>F1 balances precision and recall. F0.5 gives precision more weight.</span></div>
+          <div class="metric"><b>Count MAE + bias</b><span>Average absolute count error; bias says whether counts tend high or low.</span></div>
+          <div class="metric"><b>Dice</b><span>Pixel-level overlap between predicted masks and reference masks.</span></div>
+          <div class="metric"><b>AJI</b><span>Instance-aware overlap that accounts for matching cell regions.</span></div>
+          <div class="metric"><b>PQ</b><span>Combines instance detection and mask quality into one score.</span></div>
+          <div class="metric"><b>Threshold sweep</b><span>Tries confidence cutoffs on validation data; the chosen cutoff should not be tuned on a test set.</span></div>
+        </div>
+        <div class="callout"><span class="icon">!</span><div><strong>Why not pick the lowest loss?</strong> Training loss is a weighted sum of different tasks. The fold checkpoint is selected mainly by validation F1, with count MAE as a tie-break. Lower loss can coexist with worse cell detections.</div></div>
+      </section>
+
+      <section id="stage2">
+        <div class="section-head"><div class="eyebrow">07 · Whole-slide use</div><h2>Stage 2 tiles, overlaps and stitches</h2><p>Stage 2 is an inference and assembly procedure around the same trained model. It handles cells near crop boundaries and merges repeated views.</p></div>
+        <div class="pipeline" style="grid-template-columns:repeat(4,1fr)">
+          <article class="step"><div class="step-num">A</div><h3>Overlap tiles</h3><p>512-pixel crops move by 75% of patch width, giving a 25% overlap.</p></article>
+          <article class="step"><div class="step-num">B</div><h3>Shift to slide space</h3><p>Each crop's centre, box and mask coordinates are shifted by its slide origin.</p></article>
+          <article class="step"><div class="step-num">C</div><h3>Remove duplicates</h3><p>Near-identical centres from different tiles compete; edge-aware quality favours a less-truncated view.</p></article>
+          <article class="step"><div class="step-num">D</div><h3>Write outputs</h3><p>Optional global label map, detection CSV, JSON metadata and coloured overlay.</p></article>
+        </div>
+        <div class="two-col" style="margin-top:18px">
+          <article class="surface panel"><h3>Why overlap matters</h3><p>A cell cut by a crop edge may look incomplete. Another overlapping tile can show the same cell with more context. Stage 2 ranks candidates using confidence and distance from that tile's edge, then suppresses duplicates only across different tiles.</p></article>
+          <article class="surface panel"><h3>How the code checks stitching</h3><p>On held-out full slides, Stage 2 reports precision, recall, F1 and count MAE. It also separates detections near tile seams from detections in tile interiors to show whether boundaries remain a problem.</p></article>
+        </div>
+      </section>
+
+      <section id="functions">
+        <div class="section-head"><div class="eyebrow">08 · Code map</div><h2>Functions worth knowing</h2><p>Open a name to see the job it performs. The helper module stays beside the notebook because macOS worker processes need importable dataset definitions.</p></div>
+        <div class="source-list">
+          <details><summary><code>CellDataset.__getitem__()</code></summary><p>Loads one crop, maps global CSV coordinates to local coordinates, builds approximate masks and target maps, then applies training-only flips, rotations and mild stain/intensity changes.</p></details>
+          <details><summary><code>edge_anchored_patch_starts()</code> + <code>tile_ownership_intervals()</code></summary><p>Ensure the final crop reaches the image edge and assign every cell centre to one validation core, even where crops overlap.</p></details>
+          <details><summary><code>grouped_kfold_splits()</code></summary><p>Creates five balanced folds by image group without importing scikit-learn. Keeping all patches from a slide together reduces data leakage.</p></details>
+          <details><summary><code>CentroidLiteNet._losses()</code></summary><p>Compares predicted centre, foreground, offsets, radius and count consistency with the target maps; returns separate loss parts for the batch logger.</p></details>
+          <details><summary><code>CentroidLiteNet._decode_one()</code></summary><p>Finds local heatmap peaks, applies the centre offsets, converts predicted radii to pixels, groups foreground pixels around centres, and derives masks and boxes.</p></details>
+          <details><summary><code>train_one_epoch()</code> + <code>run_resumable_epoch()</code></summary><p>Performs the batch learning steps, prints periodic statistics, saves recoverable progress and handles a retry with a smaller batch after an MPS out-of-memory error.</p></details>
+          <details><summary><code>validate()</code></summary><p>Matches predicted centres to labelled centres, sweeps score thresholds, aggregates precision/recall/F1 and count errors, and scores instance masks on the selected best checkpoint.</p></details>
+          <details><summary><code>stage2_predict_full_image()</code></summary><p>Runs overlapping crop inference, moves detections into full-slide coordinates, deduplicates cross-tile candidates, and optionally writes masks, tables and overlays.</p></details>
+        </div>
+      </section>
+
+      <section id="limits">
+        <div class="section-head"><div class="eyebrow">09 · Read this carefully</div><h2>What this model does not prove</h2></div>
+        <div class="warning"><strong>Research prototype, not a clinical tool.</strong><p>The masks are approximate circles derived from centroid and caliper labels; they are not manually traced cell boundaries. The current training split filters empty patches, so it may have fewer fully blank examples to teach false-positive rejection. The threshold sweep and all reported metrics still need to be checked on your real, confidential data. This guide uses a schematic only and does not run inference or promise a target score.</p></div>
+      </section>
+      <footer><div class="footer-line"></div><b>Project 2 · Cell detection and counting</b><br>Built as an offline explainer for the notebook. It does not load model weights or access images, CSVs, or checkpoints.</footer>
+    </div>
+  </main>
+  <script>
+    const truth = [{x:100,y:90},{x:220,y:150},{x:355,y:88},{x:420,y:260},{x:250,y:290}];
+    const candidates = [
+      {x:102,y:92,s:.91},{x:222,y:149,s:.75},{x:354,y:85,s:.54},{x:421,y:261,s:.28},
+      {x:165,y:230,s:.42},{x:340,y:185,s:.18},{x:252,y:289,s:.07},{x:60,y:280,s:.62}
+    ];
+    const truthLayer = document.getElementById('truthLayer');
+    const predLayer = document.getElementById('predLayer');
+    const slider = document.getElementById('threshold');
+    const svgNS = 'http://www.w3.org/2000/svg';
+    truth.forEach((p,i) => {
+      const c=document.createElementNS(svgNS,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','11'); c.setAttribute('fill','none'); c.setAttribute('stroke','#e8bd59'); c.setAttribute('stroke-width','3'); truthLayer.appendChild(c);
+      const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',p.x+13); t.setAttribute('y',p.y-10); t.setAttribute('fill','#725a22'); t.setAttribute('font-size','10'); t.setAttribute('font-weight','800'); t.textContent='GT '+(i+1); truthLayer.appendChild(t);
+    });
+    function updateToy(){
+      const threshold=Number(slider.value)/100; document.getElementById('thresholdValue').value=threshold.toFixed(2); document.getElementById('thresholdValue').textContent=threshold.toFixed(2);
+      predLayer.replaceChildren();
+      const kept=candidates.map((p,i)=>({...p,i})).filter(p=>p.s>=threshold);
+      const pairs=[];
+      kept.forEach(p=>truth.forEach((g,j)=>{const d=Math.hypot(p.x-g.x,p.y-g.y);if(d<=22)pairs.push({d,pi:p.i,gj:j});}));
+      pairs.sort((a,b)=>a.d-b.d); const usedP=new Set(),usedG=new Set();
+      pairs.forEach(m=>{if(!usedP.has(m.pi)&&!usedG.has(m.gj)){usedP.add(m.pi);usedG.add(m.gj);}});
+      kept.forEach(p=>{
+        const hit=usedP.has(p.i), c=document.createElementNS(svgNS,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','16'); c.setAttribute('fill',hit?'#13745b33':'#d56a5033'); c.setAttribute('stroke',hit?'#13745b':'#d56a50'); c.setAttribute('stroke-width','3'); predLayer.appendChild(c);
+        const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',p.x+14); t.setAttribute('y',p.y+20); t.setAttribute('fill',hit?'#0a4d3d':'#9b442f'); t.setAttribute('font-size','10'); t.setAttribute('font-weight','800'); t.textContent=p.s.toFixed(2); predLayer.appendChild(t);
+      });
+      const tp=usedP.size, fp=kept.length-tp, fn=truth.length-usedG.size, precision=tp/(tp+fp)||0, recall=tp/(tp+fn)||0, f1=(2*precision*recall/(precision+recall))||0;
+      document.getElementById('toyP').textContent=precision.toFixed(2); document.getElementById('toyR').textContent=recall.toFixed(2); document.getElementById('toyF1').textContent=f1.toFixed(2);
+      document.getElementById('toyCounts').textContent='TP '+tp+' · FP '+fp+' · FN '+fn;
+    }
+    slider.addEventListener('input',updateToy); updateToy();
+    const loopInfo=[
+      ['Load a batch','The dataset returns a list of image tensors and matching dictionaries of cell targets. Images are augmented in training; validation data is left unchanged.'],
+      ['Forward pass','The patch is stacked into a batch, downsampled by two, and passed through the compact encoder and five-channel prediction head.'],
+      ['Measure errors','The model compares centre heatmap, foreground, offsets, radius and count consistency with the labelled targets. Their weighted sum is the optimization loss.'],
+      ['Backpropagate','Automatic differentiation calculates how each parameter contributed to the loss. The code clips extreme gradient norms before the update.'],
+      ['Update weights','AdamW adjusts the parameters. This setup uses autocast and gradient scaling on CUDA; autocast is off for MPS in the current code.'],
+      ['Save progress','The resumable loop stores model/optimizer state plus epoch order and next sample position, so an interruption can continue.'],
+      ['Validate','At epoch end, the held-out image groups are scored. A validation-only cutoff sweep estimates how confidence thresholds affect detection metrics.'],
+      ['Keep best model','The fold checkpoint is selected mainly by centre F1; count MAE breaks near-ties. A learning-rate scheduler responds to validation F1.']
+    ];
+    document.querySelectorAll('.loop-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('.loop-btn').forEach(b=>b.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed','true');
+      const item=loopInfo[Number(btn.dataset.loop)]; document.getElementById('loopTitle').textContent=item[0]; document.getElementById('loopBody').textContent=item[1];
+    }));
+  </script>
+</body>
+</html>
