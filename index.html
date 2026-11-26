@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f3ed">
-  <meta name="description" content="Detailed interactive walkthrough of Project 2 cell detection, slide stitching, BCL6 classification, validation, and model limits.">
-  <title>Project 2 | Complete Cell Model Guide</title>
+  <meta name="description" content="Interactive walkthrough of Project 2 cell detection, counting, whole-image stitching, validation, and model limits.">
+  <title>Project 2 | Cell Detection Model Guide</title>
   <style>
     :root {
       --paper: #f4f3ed; --white: #fffefa; --ink: #172a2b; --muted: #536767;
@@ -93,6 +93,31 @@
     .network-block span { color:var(--muted); font-size:12px; }
     .network-block.wide { grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; gap:10px; min-height:70px; }
     .network-block .shape-count { padding:6px 9px; border-radius:999px; color:var(--green-dark); background:var(--mint); font-size:11px; font-weight:900; white-space:nowrap; }
+    .model-tour { display:grid; grid-template-columns:.82fr 1.18fr; gap:18px; }
+    .tour-steps { display:grid; gap:8px; }
+    .tour-step { display:grid; grid-template-columns:34px 1fr; gap:11px; align-items:center; width:100%; padding:12px; text-align:left; color:var(--ink); background:var(--white); border:1px solid var(--line); border-radius:14px; cursor:pointer; transition:.18s ease; }
+    .tour-step:hover,.tour-step[aria-pressed="true"] { border-color:var(--green); background:#edf5ef; box-shadow:0 6px 18px rgba(19,116,91,.09); }
+    .tour-step .tour-n { width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:var(--mint);color:var(--green-dark);font-size:12px;font-weight:900; }
+    .tour-step[aria-pressed="true"] .tour-n { color:#fff;background:var(--green); }
+    .tour-step b { display:block;font-size:13px; }
+    .tour-step small { display:block;margin-top:2px;color:var(--muted);font-size:11px; }
+    .tour-detail { min-height:100%; padding:25px; }
+    .tour-detail-head { display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px; }
+    .tour-detail h3 { margin:0;font-size:24px;letter-spacing:-.03em; }
+    .tour-counter { padding:6px 10px;border-radius:999px;background:var(--mint);color:var(--green-dark);font-size:11px;font-weight:900;white-space:nowrap; }
+    .tour-detail > p { margin:0;color:var(--muted);font-size:15px; }
+    .tour-facts { display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:18px; }
+    .tour-fact { padding:13px;border-radius:13px;background:#f5f6f0; }
+    .tour-fact span { display:block;color:var(--green);font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase; }
+    .tour-fact b { display:block;margin-top:5px;font-size:13px;line-height:1.35; }
+    .tour-analogy { margin-top:14px;padding:14px 16px;border-left:4px solid var(--coral);border-radius:0 13px 13px 0;background:#fff7f2;color:#5c514a;font-size:13px; }
+    .tour-analogy b { color:#873e2c; }
+    .tour-controls { display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:17px; }
+    .tour-controls button { padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--white);color:var(--green-dark);font:inherit;font-size:12px;font-weight:850;cursor:pointer; }
+    .tour-controls button:hover { border-color:var(--green); }
+    .tour-controls button:disabled { opacity:.45;cursor:not-allowed; }
+    .tour-caveat { margin-top:18px;padding:15px 17px;border:1px solid #efc7b8;border-radius:14px;background:var(--coral-pale);color:#57392f;font-size:13px; }
+    .tour-caveat b { color:#833f2d; }
     .loss-box { padding:20px; margin-top:15px; border-radius:16px; background:#183b36; color:#f8f7ef; }
     .equation { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:clamp(16px,2.2vw,23px); line-height:1.65; overflow-wrap:anywhere; }
     .equation strong { color:#9cddbb; }
@@ -128,15 +153,6 @@
     .fold-explainer b { color:var(--green-dark); }
     .fold-explainer p { margin:5px 0 0; color:#4a605a; font-size:14px; }
     .fold-facts { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
-    .speaker-notes-content { padding:clamp(18px,4vw,42px); background:var(--white); border:1px solid var(--line); border-radius:18px; }
-    .speaker-notes-content h1 { max-width:none; margin:0 0 20px; font-size:clamp(30px,4vw,46px); line-height:1.1; letter-spacing:-.04em; }
-    .speaker-notes-content h2 { margin:32px 0 12px; padding-top:18px; border-top:1px solid var(--line); font-size:clamp(22px,3vw,30px); line-height:1.2; }
-    .speaker-notes-content p, .speaker-notes-content li { color:#425653; }
-    .speaker-notes-content table { display:block; width:100%; overflow-x:auto; border-collapse:collapse; font-size:13px; }
-    .speaker-notes-content th, .speaker-notes-content td { min-width:150px; padding:9px 11px; border:1px solid var(--line); text-align:left; vertical-align:top; }
-    .speaker-notes-content th { background:#eaf2ec; color:var(--green-dark); }
-    .notes-document { padding:18px; }
-    .notes-document > summary { font-size:16px; }
     .fold-fact { padding:14px; border-radius:13px; background:#f6f7f1; }
     .fold-fact b { display:block; color:var(--green-dark); font-size:13px; }
     .fold-fact span { display:block; margin-top:4px; color:var(--muted); font-size:12px; }
@@ -156,15 +172,15 @@
     .warning p { margin:6px 0 0; font-size:14px; }
     footer { padding:35px 0 50px; color:var(--muted); font-size:12px; }
     .footer-line { height:1px; margin-bottom:20px; background:var(--line); }
-    @media (max-width:880px) { .hero{grid-template-columns:1fr;gap:25px;padding-top:53px}.hero-art{min-height:260px}.pipeline{grid-template-columns:1fr 1fr}.step:after{display:none}.outputs{grid-template-columns:repeat(2,1fr)}.playground,.network-layout{grid-template-columns:1fr}.loop{grid-template-columns:repeat(2,1fr)}.metric-grid{grid-template-columns:repeat(2,1fr)} }
-    @media (max-width:560px) { nav{gap:13px}.brand{font-size:12px}.wrap{width:min(100% - 28px,1140px)}.hero{padding:43px 0}.hero p{font-size:16px}.hero-art{min-height:225px;padding:17px}.cell{width:60px;height:55px}.cell:after{left:25px;top:21px}.cell-ring{width:70px;height:70px}.pipeline,.two-col,.source-list,.fold-details{grid-template-columns:1fr}.diagram{grid-template-columns:1fr}.diagram-arrow{transform:rotate(90deg)}.playground{padding:13px}.loop{grid-template-columns:1fr 1fr}.loop-btn{min-height:118px;padding:12px}.metric-grid{grid-template-columns:1fr 1fr}.folds{grid-template-columns:repeat(3,minmax(72px,1fr));overflow:auto}.fold{padding:11px 5px}.fold-explorer{padding:14px}.fold-matrix{border-spacing:2px}.fold-matrix th:first-child{width:75px}.fold-matrix td{padding:8px 2px;font-size:10px}.fold-facts{grid-template-columns:1fr}.toy-stat{padding:8px}.toy-stat b{font-size:17px} }
+    @media (max-width:880px) { .hero{grid-template-columns:1fr;gap:25px;padding-top:53px}.hero-art{min-height:260px}.pipeline{grid-template-columns:1fr 1fr}.step:after{display:none}.outputs{grid-template-columns:repeat(2,1fr)}.playground,.network-layout,.model-tour{grid-template-columns:1fr}.loop{grid-template-columns:repeat(2,1fr)}.metric-grid{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:560px) { nav{gap:13px}.brand{font-size:12px}.wrap{width:min(100% - 28px,1140px)}.hero{padding:43px 0}.hero p{font-size:16px}.hero-art{min-height:225px;padding:17px}.cell{width:60px;height:55px}.cell:after{left:25px;top:21px}.cell-ring{width:70px;height:70px}.pipeline,.two-col,.source-list,.fold-details{grid-template-columns:1fr}.diagram{grid-template-columns:1fr}.diagram-arrow{transform:rotate(90deg)}.playground{padding:13px}.loop{grid-template-columns:1fr 1fr}.loop-btn{min-height:118px;padding:12px}.metric-grid{grid-template-columns:1fr 1fr}.folds{grid-template-columns:repeat(3,minmax(72px,1fr));overflow:auto}.fold{padding:11px 5px}.fold-explorer{padding:14px}.fold-matrix{border-spacing:2px}.fold-matrix th:first-child{width:75px}.fold-matrix td{padding:8px 2px;font-size:10px}.fold-facts,.tour-facts{grid-template-columns:1fr}.tour-detail{padding:18px}.tour-step{padding:10px}.toy-stat{padding:8px}.toy-stat b{font-size:17px} }
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">P2</span> CELL MODEL GUIDE</div>
     <nav aria-label="Main navigation">
-      <a href="#pipeline">Pipeline</a><a href="#data">Labels</a><a href="#network">Model</a><a href="#training">Training</a><a href="#validation">Validation</a><a href="#stage2">Stage 2</a><a href="#stage3">Stage 3</a><a href="#speaker-notes">Full notes</a>
+      <a href="#pipeline">Pipeline</a><a href="#data">Labels</a><a href="#network">Model</a><a href="#model-tour">One prediction</a><a href="#training">Training</a><a href="#validation">Validation</a><a href="#stage2">Stage 2</a>
     </nav>
   </header>
   <main>
@@ -172,8 +188,8 @@
       <section class="hero" id="top">
         <div>
           <div class="eyebrow">A code walkthrough for Project 2</div>
-          <h1>Find cells.<br><span>Understand every stage.</span></h1>
-          <p>A detailed, interactive guide to the two-cell notebook: cell detection, whole-slide stitching, optional BCL6 classification, validation, and the limits of the current labels.</p>
+          <h1>Find cells.<br><span>Follow every step.</span></h1>
+          <p>A detailed, interactive guide to the two-cell notebook: cell detection, whole-slide stitching, validation, and the limits of the current labels.</p>
           <div class="hero-note"><span class="dot"></span>Teaching demo only · no confidential images or CSVs</div>
         </div>
         <div class="hero-art" aria-label="Schematic illustration of cells and predicted centres">
@@ -183,15 +199,14 @@
       </section>
 
       <section id="pipeline">
-        <div class="section-head"><div class="eyebrow">01 · The big picture</div><h2>From annotated slides to classified cells</h2><p>Stage 1 and Stage 2 share the same cell-finding model. Stage 3 is a separate, optional classifier that assigns BCL6 status to detected cells.</p></div>
+        <div class="section-head"><div class="eyebrow">01 · The big picture</div><h2>From annotated slides to whole-image counts</h2><p>Stage 1 trains and checks the detector on image tiles. Stage 2 uses that same detector on overlapping tiles, then combines its predictions into full-image results.</p></div>
         <div class="pipeline">
           <article class="step"><div class="step-num">1</div><h3>Labels + tiles</h3><p>CSV centres and calipers are mapped onto 512 × 512 crops.</p></article>
           <article class="step"><div class="step-num">2</div><h3>Stage 1: learn</h3><p>CentroidLite learns centre, foreground, offset, radius and density targets.</p></article>
           <article class="step"><div class="step-num">3</div><h3>Stage 1: detect</h3><p>Each crop produces scored centres, approximate masks, boxes and local counts.</p></article>
           <article class="step"><div class="step-num">4</div><h3>Stage 2: stitch</h3><p>Overlapping tile predictions are aligned, fused and evaluated at full-image scale.</p></article>
-          <article class="step"><div class="step-num">5</div><h3>Stage 3: classify</h3><p>Optional crop CNN predicts BCL6 status for detected cells; training is off by default.</p></article>
         </div>
-        <div class="callout"><span class="icon">↳</span><div><strong>The notebook has two code cells.</strong> Cell 1 prepares the environment and shared data structures. Cell 2 runs Stage 1, continues into Stage 2, then reaches Stage 3. The same CentroidLite detector is used for Stages 1 and 2; Stage 3 is a separate classifier.</div></div>
+        <div class="callout"><span class="icon">↳</span><div><strong>The notebook has two code cells.</strong> Cell 1 prepares the environment and shared data structures. Cell 2 trains and validates Stage 1, then uses the same CentroidLite detector for Stage 2 whole-image stitching.</div></div>
       </section>
 
       <section id="data">
@@ -239,7 +254,7 @@
       </section>
 
       <section id="network">
-        <div class="section-head"><div class="eyebrow">04 · The network</div><h2>CentroidLite predicts six maps at once</h2><p>The compact network trades a large object-detection stack for a small set of dense maps. Its smaller architecture aims to reduce compute; actual speed still depends on hardware, data loading and cell density.</p></div>
+        <div class="section-head"><div class="eyebrow">04 · The network</div><h2>CentroidLite predicts six maps at once</h2><p>The compact network replaces a large object-detection stack with six aligned maps. Think of it as asking six small questions at every location: “Is a centre here?”, “Is this cell area?”, “How far is the centre?”, “How large is it?”, and “How many cells are nearby?” Its smaller architecture aims to reduce compute; actual speed still depends on hardware, data loading and cell density.</p></div>
         <div class="network-layout">
           <div class="network-visual surface" aria-label="Network block diagram">
             <div class="network-block"><strong>512 × 512 RGB</strong><span>Values scaled to 0–1</span></div>
@@ -260,6 +275,32 @@
           </div>
         </div>
         <div class="loss-box"><div class="eyebrow" style="color:#9cddbb">The training objective</div><div class="equation"><strong>L total</strong> = L centre + L foreground + 2L offset + L radius + 0.08L density + 0.10L log-count</div><p>Centre uses focal-style supervision and mines difficult negatives. Foreground combines weighted binary cross-entropy with Dice loss. Density uses pixelwise Smooth L1 against normalized point kernels; log-count compares the sum of predicted density with the exact labelled cell count. The density map also supplies a modest candidate-score agreement cue. Loss scales depend on the architecture and reduction rules, so raw total loss should not be compared directly with unrelated models.</p></div>
+      </section>
+
+      <section id="model-tour">
+        <div class="section-head"><div class="eyebrow">A closer look · one cell, end to end</div><h2>Follow one prediction through the model</h2><p>Choose a step, or use the arrows. This follows one example cell from its training label to the model’s final centre, approximate mask and bounding box. The schematic explains the code; it is not a real tissue image or model output.</p></div>
+        <div class="model-tour">
+          <div class="tour-steps" role="group" aria-label="Steps in one cell prediction">
+            <button class="tour-step" data-tour="0" aria-pressed="true"><span class="tour-n">01</span><span><b>Prepare the tile</b><small>Image pixels and cell labels</small></span></button>
+            <button class="tour-step" data-tour="1" aria-pressed="false"><span class="tour-n">02</span><span><b>Build learning targets</b><small>Turn a point into six teaching signals</small></span></button>
+            <button class="tour-step" data-tour="2" aria-pressed="false"><span class="tour-n">03</span><span><b>Extract visual features</b><small>Reduce size, detect useful patterns</small></span></button>
+            <button class="tour-step" data-tour="3" aria-pressed="false"><span class="tour-n">04</span><span><b>Mix tissue context</b><small>Look at nearby and wider regions</small></span></button>
+            <button class="tour-step" data-tour="4" aria-pressed="false"><span class="tour-n">05</span><span><b>Predict six maps</b><small>Centre, area, position, size, density</small></span></button>
+            <button class="tour-step" data-tour="5" aria-pressed="false"><span class="tour-n">06</span><span><b>Decode a cell instance</b><small>Centre → mask → box → count</small></span></button>
+          </div>
+          <article class="tour-detail surface" aria-live="polite" aria-atomic="true">
+            <div class="tour-detail-head"><h3 id="tourTitle">Prepare the tile</h3><span class="tour-counter" id="tourCounter">STEP 1 OF 6</span></div>
+            <p id="tourBody">The dataset supplies a 512 × 512 colour crop as numbers scaled to 0–1. A crop can contain many cells or no labelled cells. Each image group stays attached to its own fold so related tiles do not leak between training and validation.</p>
+            <div class="tour-facts">
+              <div class="tour-fact"><span>Input</span><b id="tourInput">512 × 512 RGB tile</b></div>
+              <div class="tour-fact"><span>Operation</span><b id="tourAction">Scale colour values; keep the tile’s image group</b></div>
+              <div class="tour-fact"><span>Output</span><b id="tourOutput">A standardised image tensor</b></div>
+            </div>
+            <div class="tour-analogy"><b>Plain-language version:</b> <span id="tourAnalogy">This is one small window cut from a very large microscope slide; the network processes windows because the whole slide is too large to fit at once.</span></div>
+            <div class="tour-controls"><button type="button" id="tourPrev" disabled>← Previous</button><button type="button" id="tourNext">Next step →</button></div>
+          </article>
+        </div>
+        <div class="tour-caveat"><b>What the final mask means:</b> the current labels provide cell centres and caliper-based sizes, not hand-traced contours. The decoder makes an approximate instance mask from predicted foreground pixels inside the predicted radius; when foreground support is too weak, it falls back to a circle. The box is the mask’s outer extent. So a box and count are produced for each accepted centre, but the outline is not proof of the true biological boundary.</div>
       </section>
 
       <section id="training">
@@ -353,23 +394,7 @@
         </div>
         <div class="callout"><span class="icon">↗</span><div><strong>Read seam results as a diagnostic:</strong> similar seam and interior F1 suggests that crop boundaries are not the only source of error. Lower seam scores point toward truncation or duplicate handling. Higher seam scores do not prove the stitcher is better; compare the same held-out images, threshold and fold assignments.</div></div>
       </section>
-
-      <section id="stage3">
-        <div class="section-head"><div class="eyebrow">08 · Optional classification</div><h2>Stage 3 asks whether each detected cell is BCL6-positive</h2><p>Stage 3 is a separate cell-crop classifier. It adds a class to Stage 2 detections; it does not replace the cell detector or segmentation proxy. Its training switch is off by default.</p></div>
-        <div class="pipeline" style="grid-template-columns:repeat(4,1fr)">
-          <article class="step"><div class="step-num">1</div><h3>Check class meaning</h3><p>Confirm the configured CSV class column and positive/negative label map before enabling training.</p></article>
-          <article class="step"><div class="step-num">2</div><h3>Build cell crops</h3><p>Use labelled centroids and caliper radii to create 96-pixel crops with surrounding tissue context.</p></article>
-          <article class="step"><div class="step-num">3</div><h3>Grouped classifier CV</h3><p>Train a compact crop CNN; up to five image/case folds and ten epochs, reduced when class groups are limited.</p></article>
-          <article class="step"><div class="step-num">4</div><h3>Classify detections</h3><p>Apply the refit classifier to Stage 2 detections and report positive, negative and uncertain counts.</p></article>
-        </div>
-        <div class="two-col" style="margin-top:18px">
-          <article class="surface panel"><h3>Current Stage 3 defaults</h3><ul class="check-list"><li><span>RGB + approximate hematoxylin / DAB optical-density channels.</span></li><li><span>Caliper-derived nucleus-prior channel enabled; v5 pools nucleus and surrounding perinuclear-ring features.</span></li><li><span>Crop-centre jitter up to 4 px and radius jitter from 0.85× to 1.15× during training only.</span></li><li><span>Five folds maximum; ten-epoch cap; early stopping patience 3; training batch 32.</span></li><li><span>Fixed probability threshold 0.50; predictions within ±0.10 are marked uncertain.</span></li></ul></article>
-          <article class="surface panel"><h3>Leakage and interpretation</h3><p>Cells from one image or patient must stay in one group. The default group is source image; set a patient/case field when available. Folds are reduced so both classes appear in each validation group. The model reports positive-class precision/recall/F1, specificity, balanced accuracy, PR-AUC and per-case summaries. Class weighting and case weighting are computed from each training fold only.</p><p>The proposed research workflow begins with an interpretable DAB optical-density baseline inside the annotated nucleus, supported by hematoxylin and local context. Then compare RGB and RGB+H/DAB crop CNNs on identical case folds. Evaluate probability calibration and class-specific precision/recall as well as PR-AUC; a high overall accuracy can hide a missed minority class. The current executable path is the crop CNN, not the DAB baseline.</p><div class="callout"><span class="icon">!</span><div><strong>Before turning it on:</strong> verify what each CSV label means. Stage 3 is still a research classifier; its score must be evaluated on held-out cases, and the circular prior is not a true nuclear boundary.</div></div></article>
-        </div>
-        <div class="callout"><span class="icon">↻</span><div><strong>In the two-cell notebook:</strong> Stage 3 code is at the end of Cell 2. With <code>STAGE3_RUN_TRAINING = False</code>, it defines the classifier and prints setup guidance but does not build labelled cell-crop records or train. Enabling it adds grouped cross-validation, all-labelled-cell refit, and the Stage 2 classification helper after Stages 1 and 2.</div></div>
-      </section>
-
-      <section id="functions">
+<section id="functions">
         <div class="section-head"><div class="eyebrow">09 · Code map</div><h2>Functions worth knowing</h2><p>Open a name to see the job it performs. The helper module stays beside the notebook so dataset definitions can be imported by macOS worker processes if workers are enabled.</p></div>
         <div class="source-list">
           <details><summary><code>CellDataset.__getitem__()</code></summary><p>Loads one crop, maps global CSV coordinates to local coordinates, builds approximate masks and target maps, then applies training-only flips, rotations and mild stain/intensity changes.</p></details>
@@ -387,459 +412,7 @@
         <div class="section-head"><div class="eyebrow">10 · Read this carefully</div><h2>What this model does not prove</h2></div>
         <div class="warning"><strong>Research prototype, not a clinical tool.</strong><p>The masks are approximate circles derived from centroid and caliper labels; they are not manually traced cell boundaries. Training retains every cell-containing patch and samples empty patches at 0.50 per positive patch; validation keeps the full held-out patch set, including empty patches. The threshold sweep and all reported metrics still need to be checked on held-out data. Dice, AJI and PQ are measured against caliper-derived circular pseudo-masks, not manually traced boundaries. This guide uses invented examples only; it does not load confidential images, CSVs, model weights or checkpoints and does not promise a target score.</p></div>
       </section>
-      <section id="speaker-notes">
-        <div class="section-head"><div class="eyebrow">11 · Complete presenter notes</div><h2>All speaker-note content in one place</h2><p>This expandable manuscript includes the full detailed walkthrough, implemented improvement record, interpretation of prior results, research context, and Stage 3 notes. It is bundled locally in this page; no server fetch is needed.</p></div>
-        <details class="notes-document"><summary>Open the complete 17-section speaker-note document</summary><div class="speaker-notes-content"><h1>Project 2: Detailed Speaker Notes and Model Improvement Record</h1>
-<p>These notes explain the current Project 2 cell model in presenter-friendly language. They follow the pipeline from the annotated images to training, validation, and stitched whole-image predictions. They also record the current notebook settings and the substantive code changes made to address the failure patterns seen in the supplied logs. This document describes the implementation in <code>Project 2 Stage 1 and 2 Complete.ipynb</code> and <code>cell_dataset_workers.py</code>; it does not claim that any change has improved scores until a fresh, comparable validation run confirms it.</p>
-<h2>1. Opening: what problem are we solving?</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“Project 2 asks us to find individual cells or nuclei in high-resolution DLBCL tissue images, outline them, and count them. The input is a stained tissue image plus a table of annotated cell-centre coordinates and measurements. The output should be a set of individual detections, each with a centre, a mask or outline, a bounding box, and a count.</p>
-<p>“The images are much larger than a normal neural-network input, so we process them as smaller image tiles. This creates two linked tasks. Stage 1 learns to recognize cells inside a tile. Stage 2 runs that same learned model across overlapping tiles and combines the results back into one whole-image result.”</p>
-<p>“The current default is a compact centre, foreground, and density model called <code>CentroidLiteNet</code>. The notebook now has two runnable code cells: shared setup, then a combined Stage 1–3 pipeline. The second cell runs Stage 1 training and tile checks, continues to Stage 2 overlapping-tile inference, then reaches the optional Stage 3 classifier section. Stage 3 design notes are kept as comments in that same cell. The same Stage 1 network is used for Stage 2; Stage 3 is a distinct classifier that runs on detected cell crops, with classifier training disabled by default.”</p>
-<p><strong>Current code snapshot</strong></p>
-<table>
-<thead>
-<tr>
-<th>Setting</th>
-<th>Current implementation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Main model</td>
-<td><code>centroid_lite</code> (<code>CentroidLiteNet</code>), stride-two output, parallel multi-scale context, count-conserving spatial density head and density-aware centre scoring; RGB input by default</td>
-</tr>
-<tr>
-<td>Training tiles</td>
-<td>512 × 512 pixels, evenly spaced edge-anchored starts</td>
-</tr>
-<tr>
-<td>Cross-validation</td>
-<td>Three grouped folds; image groups stay intact; splitter balances patch and annotation counts</td>
-</tr>
-<tr>
-<td>Epoch budget</td>
-<td>Up to 10 epochs per CV fold; final all-data refit is capped at 10 epochs; early stopping can end earlier</td>
-</tr>
-<tr>
-<td>Training examples</td>
-<td>Every positive tile plus a reproducible sample of empty tiles at 0.50 per positive tile; hard-negative ratio 96</td>
-</tr>
-<tr>
-<td>Default validation cutoff</td>
-<td>0.10 for the primary fold comparison; calibrated cutoffs are also reported separately</td>
-</tr>
-<tr>
-<td>Decoder and matching</td>
-<td>Foreground-score blend 0.30; peak suppression 4 px; centre-match distance 12 px</td>
-</tr>
-<tr>
-<td>Stage 2 tile plan</td>
-<td>Nominal 25% minimum overlap, evenly spaced edge-anchored tiles, batched inference, radius-aware cross-tile consensus fusion</td>
-</tr>
-<tr>
-<td>Stage 3 classifier</td>
-<td>Optional; training is off by default until the CSV class meaning and label map are confirmed</td>
-</tr>
-<tr>
-<td>Progress output</td>
-<td>Setup/indexing progress and persistent training summaries every 100 batches</td>
-</tr>
-<tr>
-<td>macOS loader default</td>
-<td>Zero DataLoader workers for notebook/MPS reliability; the dataset module remains importable for explicitly enabled workers</td>
-</tr>
-</tbody>
-</table>
-<p>“At the start of Stage 1, the notebook prints a run fingerprint with the recipe identifier, fold count, epoch cap, empty-tile ratio, hard-negative ratio, positive-centre weight, augmentation range, fixed cutoff, selection weights, and checkpoint directory. Read this first when comparing logs: a checkpoint from an older recipe should not be treated as the current run.”</p>
-<h2>2. What the labels do and do not tell the model</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“The available labels tell us where a cell centre is. They do not provide a manually traced outline for every cell. The code estimates a radius from the recorded maximum and minimum caliper measurements, then creates a circular training mask around the centre. It assumes the calipers are full axis lengths, so it uses half of their geometric mean as the radius. A fallback radius is used when the measurements are missing or invalid, and the result is clipped to a configured minimum and maximum.”</p>
-<p>“The brief’s ‘different colour map’ figure is a visualization of the pathologist’s centroid annotations: it shows marked centre points and an overlay on the source image. It does not prescribe recolouring the image to find cells. The model already uses those centres to build a centre heatmap target. A separate stain-separation experiment is still reasonable, but it is an additional preprocessing experiment, not what that figure itself describes.”</p>
-<p>“This lets us train and score a mask-producing model even though traced contours are unavailable. It also sets a limit on what the mask scores mean: Dice, AJI, and PQ are measured against caliper-derived circular pseudo-masks. They are useful for checking whether the model reproduces its constructed targets. They do not prove that the predicted boundary matches the true biological boundary. A manually traced subset would be needed to make that claim.”</p>
-<p>“All annotated objects currently use one foreground class, called cell. The code does not train a BCL6-positive versus BCL6-negative classifier. That is a later classification task, after cell finding and counting are reliable.”</p>
-<h2>3. Preparing tiles and retaining border cells</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“A tile is a square crop, currently 512 by 512 pixels. The code reads each image’s dimensions and the matching annotation table, then assigns each cell centre to every crop that contains it for training. The crop coordinates are retained so a predicted local point can later be converted back into the original image coordinates.”</p>
-<p>“The old grid placed most crops one patch-width apart and then shifted the final crop to the far edge. In some image sizes, that made the last two training crops overlap almost completely. The updated grid uses the same number of crops but spreads the necessary overlap more evenly. For example, a 1600-pixel axis with 512-pixel crops now starts at approximately 0, 363, 725, and 1088 pixels. This avoids giving the far edge a disproportionate number of nearly repeated examples.”</p>
-<p>“When a crop extends beyond a small image edge, PIL would normally fill the missing area with black. Black padding is unlike the surrounding tissue and can teach the network an artificial edge cue. The worker module now extends the last real row and column into the padded area. The valid image width and height are still tracked, so padding is excluded from evaluation and output masks.”</p>
-<p>“For validation, neighbouring crop regions overlap. The code splits that overlap into ownership regions. A reference cell and a prediction are counted in one owner region only. This avoids counting the same cell twice just because it appears in two crops. For training, the image remains available in overlapping crops to provide varied context.”</p>
-<p>“The setup indexes image dimensions, annotation coordinates, crop starts, and ownership bounds once, then reuses that metadata for the training and validation views. The fold splitter is implemented locally rather than importing scikit-learn, avoiding a slow or interrupted dependency import during notebook startup. It keeps each source-image group intact and greedily balances both patch volume and annotated-cell counts. It is not a patient-level split unless the group key is changed to a patient or case identifier.”</p>
-<h2>4. Augmentation and empty-background examples</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“Training augmentation makes plausible variations of the same labeled crop. The code flips and rotates the image and transforms the cell coordinates along with it. For the centroid model, it also applies a mild, occasional isotropic zoom between 0.90× and 1.10×; it resizes the crop, shifts the centre coordinates, and scales the caliper radii together. A zoom-in is skipped if it would crop any labelled centre, avoiding false targets at the crop edge. This exposes the model to modest cell-size variation. It also makes brightness, contrast, saturation, and channel-gain changes. Validation uses unaugmented images so it measures the model on the original inputs.”</p>
-<p>“One important precision issue was that training excluded every tile with no annotated cells. Validation still contained those empty tiles. That meant the model was asked to avoid false positives in backgrounds it had never seen as a training example. The current experiment keeps every cell-containing crop and samples empty crops at 50% of the positive-crop count. This is a measured increase from 35%, intended to reduce background false positives and over-counting. It adds roughly 11% more training tiles than the previous 35% setting, and can hurt recall if the supposedly empty crops contain unlabelled cells.”</p>
-<p>“The worker code now augments sampled empty crops too. They remain empty after flips and rotations, so they teach the model what background can look like under the same image transformations as positive examples.”</p>
-<p>“The centre loss also mines more difficult background locations within each patch: the negative-to-positive mining ratio has increased from 64 to 96, with the existing per-patch cap of 2,048 mined locations. The positive-centre emphasis remains at 1.5. This aims to teach a sharper boundary between true centres and stain texture while retaining a strong signal for annotated cells. Both changes target false positives; they may reduce recall if labels omit real cells, so the next run must compare precision and recall together.”</p>
-<p>“The scale jitter is not applied to validation, and it is not meant to simulate severe zoom changes. It is a controlled geometric augmentation: image pixels, centre coordinates, and estimated radii are transformed together so target geometry stays aligned.”</p>
-<p>“The current Stage 1 objective removes the approximate centre-heatmap-mass consistency shortcut. It adds a spatial density target: every annotated centre contributes a Gaussian whose values are normalized to sum to one, so the total target-map mass equals the exact number of annotated cells, even when nearby Gaussians overlap. A pixelwise density loss teaches where the cell mass belongs, and a log-count loss supervises the sum. This density head is an auxiliary task; the centre detector still proposes individual cells.”</p>
-<h2>5. The network: how it produces a cell prediction</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“The model first reduces the input from 512 by 512 to 256 by 256 using average pooling. It then extracts image features with a small convolutional stem and residual depthwise-separable blocks. A depthwise convolution looks at nearby pixels independently per feature channel; a pointwise convolution mixes information across channels. This is a lighter operation than a full convolution over every input and output channel.”</p>
-<p>“The blocks also include a small channel gate. It summarizes the feature map and learns which channels deserve more emphasis for the current image. The model is intentionally compact because training runs locally on Apple MPS and memory and runtime have been recurring constraints.”</p>
-<p>“The current Stage 1 recipe uses parallel depthwise branches at dilation one, two, and four. One branch emphasizes local nuclear texture; the wider branches include neighbouring tissue and nearby nuclei. A gated residual fusion combines those views back into the same compact 24-channel feature map, followed by a local refinement block. The parallel branches give each location local and wider context at once, while keeping the detector output stride unchanged.”</p>
-<p>“The spatial head now produces six maps: centre confidence, foreground confidence, horizontal centre offset, vertical centre offset, normalized radius, and a nonnegative density map. There is no separate globally pooled scalar-count head. Instead, each annotated centre contributes one unit of target density, and summing the predicted map estimates the number of cells in the tile. The initial density bias was raised from an almost-zero value because softplus has a very small gradient far below zero; the new initialization gives the map a plausible starting scale and a more useful learning signal. Validation reports the density map’s tile-count MAE and signed bias alongside the detector’s image-level count metrics.”</p>
-<p>“At inference, the decoder first finds local peaks in the centre map. It blends 30% foreground support and a modest 15% relative density support into each candidate’s score; the centre head remains the main source of candidate locations. A four-pixel minimum-distance suppression removes nearly coincident duplicate peaks, and each surviving peak is refined with the offset map. The density head does not create a second proposal list, which avoids an independent set of duplicate detections. These score blends can change precision and recall without changing the learned weights, so they must be judged on the held-out folds.”</p>
-<p>“RGB is still the default input. There is now an optional <code>rgb_hdab</code> ablation that keeps the original RGB channels and adds two approximate optical-density channels: hematoxylin and DAB. Hematoxylin tends to reveal nuclei; DAB carries the BCL6 immunostain signal. The same conversion is applied to training, Stage 1 full-image inference, and Stage 2 tile inference. The channel planes can be previewed before switching modes.”</p>
-<p>“The H/DAB vectors are generic starting values. Stain concentrations and scanning can vary by laboratory, so a deconvolution can be inaccurate if those vectors do not fit these slides. Keep RGB as the baseline, inspect the H/DAB preview, then compare the two modes using the same folds and settings. The H/DAB mode changes the model’s first convolution and requires a fresh training run.”</p>
-<p>“The default compact model starts from random weights. The optional Mask R-CNN reference can use a pretrained ResNet backbone, but it is slower and depends on torchvision startup and compatible weights. The current changes do not add a pretrained model; they improve the compact network’s context and supervision while preserving its lighter runtime profile.”</p>
-<h2>6. How training targets are built</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“Each annotated centre becomes a small Gaussian-shaped peak on the centre heatmap. The peak gives the network a smooth target around the centre instead of a single isolated pixel. At the exact peak location, the offset targets record the fractional position between the cell centre and the nearest output-grid point. The radius target records the caliper-derived radius on a normalized zero-to-one scale.”</p>
-<p>“The foreground target is a low-resolution union of the circular pseudo-masks. It says which pixels belong to any cell-like region. The regression mask marks the grid locations where an offset and radius target exist. Those size and position losses are calculated at annotated centres rather than at every background pixel.”</p>
-<p>“Several nearby cells can have overlapping foreground regions. The instance decoder uses the predicted centres as seeds and assigns foreground pixels to the nearest seed when they fall inside that seed’s predicted radius. That turns one shared foreground map into separate instance masks.”</p>
-<h2>Point-density design note</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“The new density map is a point-supervision idea: each labelled centre contributes a normalized spatial kernel, and the total map mass equals the number of points. That gives a local count target and an integrated count target at once. The implementation remains a compact convolutional centre detector; it is not P2PNet and does not use P2PNet’s Hungarian point-proposal matching. P2PNet is relevant as evidence that point-based detection/localization can avoid full pixel masks for dense-object counting (<a href="https://openaccess.thecvf.com/content/ICCV2021/papers/Song_Rethinking_Counting_and_Localization_in_Crowds_A_Purely_Point-Based_Framework_ICCV_2021_paper.pdf">ICCV 2021 paper</a>); CellRegNet is a cell-imaging example of point annotations supporting density regression (<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11352042/">paper</a>). The validation density tile MAE/bias tells us whether this extra head learned useful count information; only the centre detections determine the final cell list and count.”</p>
-<h2>7. What the loss means</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“The training loss is a weighted sum of several jobs. The centre heatmap loss is focal-style: it emphasizes missed centres and the hardest false-positive locations, while easy background pixels contribute little. Hard-negative mining selects a limited set of challenging background positions so the network does not spend most of its work on obvious empty pixels.”</p>
-<p>“The foreground loss combines weighted binary cross-entropy with Dice loss. Binary cross-entropy gives a pixel-level learning signal. Dice helps with the imbalance between a small cell foreground and a large background. In the current configuration, Dice supplies most of the foreground-loss share.”</p>
-<p>“The offset loss teaches the model to refine centre locations. The radius loss teaches the approximate cell size. The new density-map loss compares a spatial count map with the normalized point targets, while the log-count loss compares the total predicted density with the exact number of labelled centres in the tile. The density head also provides a small agreement cue when ranking centre proposals. Each term measures a different behavior, so the total loss is not directly comparable to the total loss from a different architecture or a different loss formula.”</p>
-<p>“A total loss around four does not, by itself, prove the model is bad. A different model can report a loss below two because its terms, reduction rules, scales, and target definitions differ. For this task, held-out precision, recall, F1, count error, and appropriately interpreted mask metrics are more useful than comparing raw loss numbers across unrelated code.”</p>
-<h2>8. The training loop and saved progress</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“At the start of each batch, the loader supplies images and their target maps. The model predicts its six spatial output maps, the loss function calculates all terms, gradients are computed, and AdamW updates the model. Gradient clipping limits a single batch from making an excessively large update.”</p>
-<p>“Training logs report the current loss, a smoothed loss, speed, throughput, data-wait percentage, and the recent average of each loss component. These are diagnostic signals. A lower batch loss means the training targets are being fit more closely; it does not establish generalization to held-out slides.”</p>
-<p>“The code saves a resumable checkpoint periodically and an epoch model file after each completed epoch. It preserves the model, optimizer, scheduler, scaler, batch order, and progress position, so an interruption can continue from a known batch. The updated loop checks the loss before backpropagation and checks the gradient norm before the optimizer step. If either becomes non-finite, it stops before saving contaminated weights and reports the image names and loss components. This is aimed at diagnosing the NaN run seen in the supplied logs.”</p>
-<p>“The resume file is refreshed every ten completed batches. A separate epoch-weight file is saved when each epoch finishes, so a completed epoch remains available even if a later epoch is interrupted. Resume compatibility checks include the fold split and training recipe; incompatible resume state is archived instead of being applied to a different set of tiles. On an MPS out-of-memory error, the resumable loop can lower the batch size and retry from the latest saved batch state. This is a recovery path, not a guarantee that every interrupted accelerator operation can be recovered.”</p>
-<p>“To make a slow start visible, the loop says when it is waiting for its first batch and reports when that batch arrives. It then prints a persistent batch summary every 100 batches, including recent loss components, throughput, and data-wait time. On macOS the default worker count is zero because spawned notebook workers previously caused import and memory failures. The separate worker module makes the dataset and collator pickleable if workers are deliberately enabled on a suitable setup; more workers are not automatically faster on a memory-limited Mac.”</p>
-<p>“From epoch three onward, the code maintains a simple equal-weight average of later model parameters (SWA) and validates that averaged state. This can smooth noisy parameter updates, but it is only retained when the declared validation selection score improves. The checkpoint stores the model state and validation history needed to continue or audit the run.”</p>
-<h2>9. Validation: how the scores are calculated</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“Validation switches the model to evaluation mode and disables gradient tracking. It predicts each validation crop, keeps only predictions in the crop’s ownership region and real image area, then matches predicted centres to annotated centres within a 12-pixel distance.”</p>
-<p>“The previous matcher greedily accepted the closest pair first. In a crowded example, that first choice can block a second valid match even when another one-to-one assignment could match both cells. The updated matcher uses augmenting paths on the sparse graph of allowed prediction-to-label pairs. It finds the largest possible one-to-one match set within the distance limit. This corrects the metric calculation; it does not change the model’s predictions.”</p>
-<p>“Precision is the fraction of predicted cells that match a reference centre. Low precision usually means too many false positives. Recall is the fraction of reference cells found. Low recall usually means cells are missed. F1 is the harmonic mean of precision and recall, so it penalizes a system that is strong on only one of the two.”</p>
-<p>“Count MAE is the mean absolute difference between predicted and reference counts across validation images. Count bias is signed: positive means overcounting on average; negative means undercounting. Exact-count accuracy is strict: an image counts as correct only if its predicted total equals the reference total exactly.”</p>
-<p>“The code scans a wider confidence range, from 0.01 through 0.90. For each candidate cutoff, a count-aware score combines F1 (45%), the weaker of precision and recall (25%), and count skill (30%). Count skill is <code>1 / (1 + relative count MAE / 100)</code>, so it is on a 0-to-1 scale and penalizes large image-count errors. The fixed, pre-set cutoff of 0.10 remains separately reported for fair comparisons. Since threshold selection uses validation labels, treat the calibrated cutoff as a deployment candidate and confirm it on separate cases before making a final performance claim.”</p>
-<p>“The best Stage 1 checkpoint is also selected with this stated fixed-cutoff composite. The scheduler still follows fixed-cutoff F1, so the checkpoint-ranking rule and learning-rate rule are intentionally visible as separate choices. The summary reports fixed-cutoff results as the primary CV values and calibrated-threshold results as a diagnostic. This makes it harder for each fold’s tuned threshold to inflate the main cross-validation comparison.”</p>
-<h2>10. What Dice, AJI, and PQ tell us</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“Dice checks foreground pixel overlap. It answers whether predicted cell pixels and reference cell pixels cover similar areas. In this notebook it is computed on the union of the instance masks, so it is a foreground-overlap score.”</p>
-<p>“AJI, the Aggregated Jaccard Index, is more instance-aware. It tries to match predicted objects to reference objects and combines their intersection and union. Unmatched objects add area to the denominator, so missed and extra objects hurt the score.”</p>
-<p>“PQ, Panoptic Quality, combines recognition and segmentation quality. A predicted object has to match an individual reference object with sufficiently strong overlap to count as a true positive; then the matched IoUs are averaged while false and missed objects are penalized.”</p>
-<p>“These numbers can remain low when centres are missed, when extra predictions are present, or when predicted radii differ from the constructed pseudo-mask radii. In this project they are calculated against circles built from centre and caliper data, not traced cell boundaries. We should label them ‘pseudo-mask Dice/AJI/PQ’ and state this limitation every time we present them.”</p>
-<p>“To keep routine validation faster, the current run does not recompute these mask metrics at every epoch. It refreshes Dice, AJI, and PQ on the selected best checkpoint for each fold. That is why an epoch line can say ‘mask metrics at best epoch’ while the other detection and count statistics update each epoch.”</p>
-<h2>11. Why there are three folds and ten epochs</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“Three-fold cross-validation divides the source image groups into three parts. For each run, roughly two parts train the model and the remaining part validates it. The held-out part rotates, so each image group is used for validation once. Compared with five folds, each validation split is larger and each fold has less training data. Three folds reduce the number of separate fits, but the estimate can vary more with which images land together.”</p>
-<p>“The split is by image stem, so tiles from one source image stay in the same fold. This prevents nearly identical crops from one slide appearing in both training and validation. If several source images belong to the same patient, the grouping should be upgraded to patient ID; otherwise related slides could leak across folds.”</p>
-<p>“Three folds are not three models that get averaged together for the final prediction. They are three evaluation runs. After cross-validation, the notebook trains one final model on all eligible training groups, using the median best epoch from the folds, capped at ten epochs. Stage 2 inference then uses that single final model.”</p>
-<p>“The current cap is ten epochs per fold, followed by a final refit of up to ten epochs. Each fold begins with fresh weights. Early stopping patience is also ten, so it will not normally stop before the ten-epoch cap due to a short plateau. Fold-to-fold variation is important evidence: a model that looks good on one fold but poor on another is not stable yet. Cell 2 prints a run fingerprint with recipe ID, fold count, epoch cap, density blend, and checkpoint folder so logs can be matched to the code that produced them.”</p>
-<p>“The requested maximum is ten epochs in each of three folds, or up to 30 CV fold-epochs, followed by a separate final refit capped at ten epochs. The configured total budget is therefore up to 40 training epochs, although early stopping or a lower median best epoch can reduce the actual amount. Ten is a cap, not a promise that every fold will need all ten.”</p>
-<p>“The current splitter greedily balances patch volume and annotated-cell counts while grouping by image filename stem. Stage 2 uses these same shared fold assignments for its held-out full-image checks, although its stitching model and algorithm are unchanged. If several source images belong to one patient, use patient/case ID as the group key before claiming patient-level generalization. Fold count alone cannot prevent leakage if the grouping unit is too small.”</p>
-<h2>12. Stage 2: rebuilding the full-image result</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“For a large image, Stage 2 lays evenly spaced, edge-anchored tiles across the image. The configured stride is the maximum tile-to-tile gap, so the overlap is at least the nominal 25 percent and any extra overlap is spread evenly. For a 1600-pixel axis with 512-pixel tiles, the starts are 0, 363, 725, and 1088 pixels. It runs the same Stage 1 model on each tile, adds the tile origin to each predicted centre, box, and mask position, and brings all candidates into the original image coordinate system.”</p>
-<p>“The previous duplicate rule removed any pair from different tiles whose centres were within 12 pixels. In dense tissue, two real neighbouring nuclei can be that close. The updated rule still uses proximity to find possible duplicates, but it also requires strong agreement between the two masks: sufficient mask IoU or one mask being mostly contained in the other. This better distinguishes two separate nearby cells from two tile views of one cell.”</p>
-<p>“A duplicate is only considered when mask overlap or containment supports the match; farther centre pairs need stronger mask agreement. The cluster can contain at most one prediction from any one tile, which protects two close cells seen together in a tile from being collapsed through a chain of matches. The system then fuses the repeated centres, boxes, radii, and confidence with weights based on detection confidence and view quality, while retaining the best-supported single mask as the instance shape. This uses the consistency across overlapping views instead of discarding all but one centre estimate. Remaining mask pixels are written to a disk-backed label map so a whole-slide output does not require multiple huge arrays in memory.”</p>
-<p>“The output can include a global instance-label image, a metadata JSON file, a per-cell CSV with centres, boxes, scores and instance IDs, and a visualization overlay. Stage 2 is evaluated separately on held-out full images, including seam and interior precision, recall, and F1. A good tile-level score alone does not show that stitching works.”</p>
-<p>“The Stage 2 report keeps narrow edge-band and wider overlap-region scores. The overlap region includes every point covered by multiple tiles, so it can expose duplicate-view errors away from the exact seam. Candidate view quality is based on distance from an internal crop cut relative to the estimated cell radius; the real outer slide border is not penalized as if it were an internal seam. Each fold also reports the share of detections supported by more than one tile and the average number of tile views per detection. These diagnostics show when consensus fusion is actually being used. They do not establish a score improvement until the new algorithm is compared on the same held-out full images.”</p>
-<p>“Stage 2 processes several tiles in one inference batch when the device permits, and prints tile-batch progress. Each candidate mask is stored in a compact packed representation while duplicates are compared. When outputs are requested, the instance-label image and ownership-score canvas are disk-backed arrays; detections also produce a metadata JSON, a per-cell CSV with the number of contributing views, and a rendered overlay. The label map assigns overlapping pixels to the representative mask with the stronger tile-view quality score. The output folder and metrics filename use a new v3 run ID, so results from the earlier stitcher remain separate.”</p>
-<h2>13. Interpreting the earlier run honestly</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“The supplied logs showed that performance varied a lot by fold. Fold 1 reached F1 around 0.387, with precision and recall around 0.373 and 0.402. Fold 2 reached a similar F1 around 0.391, but its count MAE was about 7,104 with substantial overcounting. Fold 3 reported a non-finite loss in an early epoch and a lower F1 in the finite results.”</p>
-<p>“The latest summary supplied with this revision reports mean precision 0.349, recall 0.462, F1 0.394, count MAE about 4,559 cells, relative count MAE about 40%, and positive count bias about 3,954. It also reports Dice 0.450, AJI 0.163, and PQ 0.089 against caliper-derived pseudo-masks. These results show both substantial false positives and misses: the aggregate count bias is positive, while the example tile overlay has only two predictions for 36 labels. That tile is evidence of a local false-negative problem; it does not contradict over-counting elsewhere in the fold.”</p>
-<p>“There is a run-label detail to check before treating those numbers as the baseline for the next comparison. The current notebook writes the fixed-cutoff CV metrics to the primary <code>precision</code>, <code>recall</code>, <code>f1</code>, and <code>score_threshold</code> fields, and stores tuned values under <code>calibrated_*</code>. Its fixed threshold is 0.10. The pasted mean says <code>score_threshold = 0.16</code>, which looks like a calibrated-threshold summary from an older output or a different notebook snapshot. Compare the next run’s printed recipe fingerprint and fixed versus calibrated fields separately.”</p>
-<p>“The chart still shows considerable fold variation, so the mean does not describe every held-out group. The earlier run used five training epochs; the current v19 recipe allows up to ten per fold. Confirm that Cell 2 prints the new <code>centroidlite_multiscale_pointdensity_v19</code> recipe fingerprint, three folds, ten epochs per fold, empty-patch ratio 0.50, hard-negative ratio 96, positive-centre weight 1.50, and the versioned checkpoint folder before comparing results.”</p>
-<p>“That pattern does not support a claim that the model is already performing well. It indicates some learning, but low detection scores, unstable counts, and a numerical failure. The new matching code can correct some evaluation undercounting, and the background examples and stitch rule address specific false-positive risks. The wider context block may help recognition. None of those changes guarantees a target score such as 0.85; that has to be established by a fresh run across all folds and then by the accelerator’s official hidden evaluation.”</p>
-<p>“The earlier notebook selected epochs using each fold’s best threshold, which can make the same validation fold look overly favorable. The updated version reports the pre-set 0.10 cutoff consistently, while checkpoint selection uses a declared composite of fixed-cutoff F1 (45%), the weaker of fixed-cutoff precision and recall (25%), and normalized count skill (30%). The learning-rate scheduler still follows fixed-cutoff F1. Separately, the validation threshold sweep uses the same P/R/F1/count-aware score, and the median fold cutoff becomes a deployment candidate. Stage 2 CV still uses fixed 0.10 for direct comparison. Checkpoint selection and cutoff calibration both use validation data, so final claims still need a separate case-level test set or nested CV.”</p>
-<h2>14. Implemented improvement list and what each can affect</h2>
-<table>
-<thead>
-<tr>
-<th>Code change</th>
-<th>Main metric it is intended to help</th>
-<th>Why it addresses a structural issue</th>
-<th>Expected cost or limitation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Sample 0.50 empty patches per positive tile and augment them</td>
-<td>Precision, F1, count MAE</td>
-<td>The model sees more annotated-empty background examples, which may reduce false positives and over-counting</td>
-<td>About 11% more patches than the prior 0.35 setting; may trade recall if empty tiles contain unlabelled cells</td>
-</tr>
-<tr>
-<td>Increase the hard-negative ratio from 64 to 96 while retaining positive-centre weight 1.5</td>
-<td>Precision, F1, count MAE; recall must be monitored</td>
-<td>Gives difficult background locations more influence in each patch while retaining the positive-centre learning signal</td>
-<td>Mining is capped at 2,048 locations per patch; stronger negatives can suppress faint or unlabelled cells</td>
-</tr>
-<tr>
-<td>Apply occasional 0.90×–1.10× scale jitter to centroid-training crops, centres, and radii</td>
-<td>Precision and recall across cell-size variation</td>
-<td>Reduces reliance on one apparent nucleus size while keeping the point and radius targets geometrically aligned</td>
-<td>Adds modest CPU resize work during training; compare the same held-out folds and remove it if data wait rises without metric gains</td>
-</tr>
-<tr>
-<td>Group patches by source image within each epoch and cache the currently open image per dataset process</td>
-<td>Training startup and input throughput</td>
-<td>Reuses decoded slide images across adjacent patches instead of reopening the same large file for every tile</td>
-<td>Cache reuse is strongest when batches stay grouped and each worker has enough memory; macOS defaults to zero workers for reliability</td>
-</tr>
-<tr>
-<td>Index patch metadata once and reuse train/validation dataset views</td>
-<td>Startup time and reproducibility</td>
-<td>Avoids rebuilding annotation-to-patch assignments for each fold or loader</td>
-<td>Initial metadata indexing still takes time and reads annotation tables when the notebook itself runs</td>
-</tr>
-<tr>
-<td>Replace the scikit-learn fold dependency with an internal grouped splitter that balances patches and cell counts</td>
-<td>Fold comparability and startup reliability</td>
-<td>Avoids a slow import stall and reduces the chance that one fold gets far more annotated cells while preserving image-group separation</td>
-<td>Greedy balance cannot overcome a few unusually large groups; use patient/case IDs where available</td>
-</tr>
-<tr>
-<td>Maximum-cardinality centre matching</td>
-<td>P, R, F1, count diagnostics</td>
-<td>Fixes cases where closest-pair greedy matching blocks another valid one-to-one match</td>
-<td>Corrects measurement, not predictions; cannot recover a truly missed cell</td>
-</tr>
-<tr>
-<td>Evenly spaced Stage 1 crop starts</td>
-<td>P/R stability, edge behavior</td>
-<td>Prevents the far edge from being represented by nearly duplicate crops with unusual weighting</td>
-<td>Same number of crops; still has overlap when an image cannot be evenly divided</td>
-</tr>
-<tr>
-<td>Replicate-edge image padding</td>
-<td>Precision and recall near image borders</td>
-<td>Avoids artificial black padding that can create edge cues and false detections</td>
-<td>Border replication is a simple boundary condition; real image-edge examples still need validation</td>
-</tr>
-<tr>
-<td>Fuse parallel dilation-1/2/4 depthwise features with gated residual context</td>
-<td>Precision and recall across varied cell sizes and local tissue patterns</td>
-<td>Lets the same centre feature combine fine nuclear texture with broader neighbourhood evidence instead of relying on a serial scale path</td>
-<td>Adds a small fusion cost; a fresh, same-fold run must verify that the richer context helps</td>
-</tr>
-<tr>
-<td>Add a spatial density map whose normalized point kernels sum to the exact tile cell count, with pixelwise and log-count losses</td>
-<td>Density tile-count MAE and shared centre features</td>
-<td>Preserves local positions while giving the model a count-conserving target even when point kernels overlap</td>
-<td>The auxiliary output may learn tissue shortcuts; validate its tile MAE and detector metrics before trusting it</td>
-</tr>
-<tr>
-<td>Optional RGB+H/DAB input</td>
-<td>Precision, recall, F1, and possibly mask quality</td>
-<td>Preserves RGB while exposing separate hematoxylin and DAB concentration cues to the model</td>
-<td>Generic stain vectors may not match the slides; RGB stays the default until the channels are visually checked and cross-validated</td>
-</tr>
-<tr>
-<td>Radius-aware cross-tile duplicate matching with stricter mask agreement for farther candidates</td>
-<td>Stage 2 precision, recall, F1, count MAE, overlap-region scores</td>
-<td>Allows larger cells to shift more between cropped views while requiring stronger mask evidence to avoid merging adjacent cells</td>
-<td>The distance and mask cutoffs need held-out validation; compare count MAE and overlap-region P/R/F1 before keeping them</td>
-</tr>
-<tr>
-<td>Evenly distribute Stage 2 tile starts while treating the configured stride as the maximum gap</td>
-<td>Seam/overlap stability and full-image P/R/F1</td>
-<td>Avoids a short, unusually dense final step when the image length is not divisible by the nominal stride</td>
-<td>Changes the exact inference views and requires a fresh, same-fold comparison</td>
-</tr>
-<tr>
-<td>Scale internal-edge reliability by estimated cell radius</td>
-<td>Stage 2 duplicate choice and seam recall</td>
-<td>A fixed 128-pixel context penalty over-penalized small nuclei; now the margin needed for a reliable view grows with cell size</td>
-<td>Radius comes from the estimated box and may be inaccurate; the 1.5× context factor must be checked on held-out images</td>
-</tr>
-<tr>
-<td>Fuse repeated centres, boxes, radii, and scores across duplicate tile views with confidence/edge weights; retain the best representative mask</td>
-<td>Stage 2 localization, seam P/R/F1, and count stability</td>
-<td>Uses multiple overlapping observations instead of discarding every weaker view; a one-view-per-tile cluster constraint protects close cells that co-occur in a tile</td>
-<td>Mask shape still comes from one view; incorrect matching could still fuse different cells, so compare with the previous v2 results and inspect crowded examples</td>
-</tr>
-<tr>
-<td>Report multi-view fusion fraction and mean contributing views, and version outputs as Stage 2 v3</td>
-<td>Stitch diagnostics and reproducibility</td>
-<td>Shows whether fusion contributes materially and prevents new outputs from overwriting the prior stitcher run</td>
-<td>Diagnostics explain algorithm behavior; only held-out fold metrics show whether it helps</td>
-</tr>
-<tr>
-<td>Conservative centre NMS (4 px, configurable)</td>
-<td>Precision, F1, count MAE; possible recall trade-off</td>
-<td>Suppresses nearly coincident local-maximum peaks that can count the same nucleus twice</td>
-<td>Compare 0, 4, and 6 px on the same held-out folds; tightly packed true centres could be merged</td>
-</tr>
-<tr>
-<td>Blend centre confidence with foreground and count-density support at candidate locations</td>
-<td>Precision/recall balance and F1</td>
-<td>Keeps the centre head in charge of proposing points, then uses two independently supervised maps as modest confidence evidence</td>
-<td>Current density blend is 0.15 and foreground blend is 0.30; both are hypotheses that need the same held-out comparison, since poor auxiliary maps could demote true cells</td>
-</tr>
-<tr>
-<td>Use configurable GroupNorm for the small, image-grouped Stage 1 batches</td>
-<td>Fold stability and generalization; metric direction must be checked</td>
-<td>GroupNorm does not depend on running batch statistics that see only a few correlated patches from one slide</td>
-<td>Compare <code>CENTROID_NORMALIZATION="group"</code> against <code>"batch"</code> on identical folds; the model recipe signature prevents mixing incompatible checkpoints</td>
-</tr>
-<tr>
-<td>Resolve Stage 1 inference cutoff when the helper is called</td>
-<td>Full-image count consistency</td>
-<td>Avoids Python default-argument capture keeping the original 0.10 cutoff after CV calibrates the deployment cutoff</td>
-<td>The chosen cutoff still needs a separate calibration set for an unbiased final claim</td>
-</tr>
-<tr>
-<td>Mark matched, false-positive, and missed centres on validation examples</td>
-<td>Error diagnosis</td>
-<td>Separates duplicate/false detections from missed labels instead of overlaying all marks together</td>
-<td>A few tiles are examples, not a replacement for fold-level metrics</td>
-</tr>
-<tr>
-<td>Select checkpoints and report primary CV results at a fixed cutoff; retain calibrated metrics separately</td>
-<td>P/R/F1 generalization estimates</td>
-<td>Stops each fold from choosing its own score threshold and then presenting that tuned score as the primary result</td>
-<td>A fixed cutoff may not be optimal for deployment; calibrate it on separate groups</td>
-</tr>
-<tr>
-<td>Select checkpoints and cutoffs with a P/R/F1 plus count-error objective</td>
-<td>Precision, recall, F1, image-count MAE</td>
-<td>Prevents a checkpoint or threshold from winning on F1 while producing substantially worse image counts; the weaker of precision/recall is included to discourage one-sided performance</td>
-<td>The 45/25/30 weights are explicit starting choices, not learned truths; compare the fixed-cutoff fold results and confirm the final cutoff on separate cases</td>
-</tr>
-<tr>
-<td>Add an opt-in per-fold error audit ranked by false positives and misses</td>
-<td>Error diagnosis for precision, recall and count MAE</td>
-<td>Lists held-out patches with count bias, TP/FP/FN and local coordinates for unmatched centres; optional overlays help inspect the worst cases</td>
-<td>It re-runs inference on the chosen fold when called; private images and labels stay on the user's machine</td>
-</tr>
-<tr>
-<td>Plot precision, recall, and F1 together with fold ranges</td>
-<td>Diagnosis of unstable validation and P/R trade-offs</td>
-<td>Shows whether a change improves both missed-cell recovery and false-positive control, and whether gains repeat across folds</td>
-<td>A visualization aids diagnosis; only held-out measurements establish improvement</td>
-</tr>
-<tr>
-<td>Stop on non-finite loss or gradient norm before updating weights</td>
-<td>Training integrity; diagnosis of NaN failures</td>
-<td>Prevents bad gradients from silently contaminating weights and records the affected images and loss parts</td>
-<td>Stops the run at the offending batch; the underlying data or numerical cause still needs diagnosis</td>
-</tr>
-<tr>
-<td>Save resumable state every 10 batches, save completed-epoch weights, and fingerprint fold/recipe compatibility</td>
-<td>Recovery and reproducibility</td>
-<td>Supports restart near the last saved batch and prevents a stale resume order from being applied to changed folds or code</td>
-<td>A crash between save points can repeat up to nine batches; an incompatible state correctly requires a fresh run</td>
-</tr>
-<tr>
-<td>Write the parallel-context point-density model to a fresh v19 checkpoint folder</td>
-<td>Reproducibility and safe resume</td>
-<td>Prevents weights and optimizer state from the earlier five-channel/count-head model or earlier fold layout from loading into the new six-map model</td>
-<td>Starts a fresh CV run; prior checkpoint folders remain available as comparisons</td>
-</tr>
-<tr>
-<td>Initialize the softplus density output near the expected per-pixel cell mass rather than near zero</td>
-<td>Density-map learning and tile-count calibration</td>
-<td>Avoids a nearly closed softplus gradient at initialization and gives validation a direct density tile-MAE/bias diagnostic</td>
-<td>Expected count scale is a starting prior; the held-out density bias reveals whether it is appropriate</td>
-</tr>
-<tr>
-<td>Change Stage 1 from five folds × five epochs to three folds × up to ten epochs</td>
-<td>More optimization per fold with fewer separate fits</td>
-<td>Gives each fold ten chances to learn while reducing CV fit count; the larger held-out groups and smaller training fraction are stated explicitly</td>
-<td>Fewer folds make the CV summary less granular; early stopping and median-epoch refit may use fewer than 40 total epochs</td>
-</tr>
-<tr>
-<td>Use later-epoch SWA parameters for validation from epoch 3</td>
-<td>Fold stability and checkpoint selection</td>
-<td>Averages later parameter updates to reduce sensitivity to one noisy epoch</td>
-<td>May not help a short run; selection still depends on validation data and is capped at ten epochs</td>
-</tr>
-<tr>
-<td>Reduce batch size and retry from the saved state after a recognized MPS out-of-memory error</td>
-<td>Training completion on limited unified memory</td>
-<td>Tries to continue with a smaller batch instead of losing all progress</td>
-<td>Smaller batches change optimization behavior and can still fail if a single sample exceeds available memory</td>
-</tr>
-<tr>
-<td>Print first-batch wait/arrival messages and persistent summaries every 100 batches</td>
-<td>Diagnosing slow input and training progress</td>
-<td>Separates dataset/worker startup delays from steady-state model throughput</td>
-<td>Summaries are diagnostics, not evidence that validation performance has improved</td>
-</tr>
-<tr>
-<td>Run Stage 2 tiles in device-appropriate batches and store large label canvases on disk</td>
-<td>Whole-image inference memory and speed</td>
-<td>Reduces per-tile launch overhead and avoids holding multiple whole-slide arrays in RAM</td>
-<td>Batch size and disk speed vary by device; the stitcher still must compare candidates and write masks</td>
-</tr>
-<tr>
-<td>Label mask metrics as caliper-derived pseudo-mask metrics</td>
-<td>Interpretation of Dice/AJI/PQ</td>
-<td>Avoids describing approximate circles as manually traced ground truth</td>
-<td>True contour quality requires a manually traced validation subset or trusted external masks</td>
-</tr>
-<tr>
-<td>Enable nucleus-and-perinuclear-ring pooling when the Stage 3 prior channel is on</td>
-<td>BCL6 cell classification, especially stain discrimination</td>
-<td>The previous model accepted the caliper prior as an input channel but its constructor left prior-aware pooling off; the v5 classifier now explicitly pools nucleus and nearby ring features</td>
-<td>Calipers give an approximate circle, not a verified nuclear boundary; measure on held-out cases</td>
-</tr>
-<tr>
-<td>Keep the nucleus prior aligned during crop jitter, flips, and rotations; keep true radius separate from crop-scale jitter</td>
-<td>Stage 3 robustness to localization and size variation</td>
-<td>Prevents the geometry cue from drifting away from the labelled cell during augmentation</td>
-<td>Uses an approximate circular prior; broad shifts or irregular nuclei can still make it inaccurate</td>
-</tr>
-<tr>
-<td>Combine mild class weighting with clipped inverse-square-root case weights computed only from each training fold</td>
-<td>Stage 3 P/R/F1 consistency across cases</td>
-<td>Reduces domination by very large cases while correcting moderate positive/negative imbalance without letting validation labels affect training weights</td>
-<td>Weighting can change probability calibration; compare fixed-threshold and per-case results</td>
-</tr>
-<tr>
-<td>Report per-case macro recall/specificity and a cross-fold threshold view alongside pooled OOF metrics</td>
-<td>Stage 3 generalization and threshold diagnosis</td>
-<td>Makes it harder for a few large slides to dominate the summary and avoids selecting each fold cutoff on that fold’s own OOF labels</td>
-<td>Cross-fold thresholds are diagnostic, not a substitute for nested CV or a separate untouched case-level test</td>
-</tr>
-<tr>
-<td>Version Stage 3 checkpoint architecture and reject incompatible saved weights</td>
-<td>Reproducibility and inference safety</td>
-<td>Prevents loading weights from the prior classifier/head into the changed v5 architecture</td>
-<td>The new recipe writes to a fresh checkpoint folder and needs a new training run</td>
-</tr>
-</tbody>
-</table>
-<h2>15. What to do in the next real-data run</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“The point-density v19 recipe has a new checkpoint folder, so it starts from fresh weights rather than resuming incompatible earlier model or optimizer state. The fold and recipe signature also archives an incompatible resume file. Compare the new run with prior results using the same image groups and the same fixed cutoff; differences in model, split count, or threshold should be called out.”</p>
-<p>“Run Cell 1 once for shared setup, then run Cell 2 for the complete pipeline. Cell 2 runs Stage 1 CV and final refit, then Stage 2 stitching and held-out evaluation, followed by the optional Stage 3 classifier section. Stage 3 classifier training is disabled by default. Because these stages now share one cell, Stage 2 follows Stage 1 automatically after it completes; use the progress messages and saved checkpoints to track the long run. Stage 1 and Stage 2 CV use the same fixed 0.10 cutoff for their primary comparison.”</p>
-<p>“The shared setup checks for required Python packages and, if needed, installs them into the active notebook kernel through that kernel’s Python executable. It then imports the worker-safe dataset module and builds the patch metadata index. The combined pipeline cell prepares SymPy’s module links before creating the PyTorch optimizer, which addresses the optimizer initialization error seen in the earlier environment. If the first batch is slow, read the setup/indexing messages and the ‘waiting for first batch’ timer to tell metadata or loader delay apart from steady training time.”</p>
-<p>“After running Cell 1, run Cell 2 once. Stage 1 is capped at ten epochs per fold in the current recipe. Treat fixed-threshold P/R/F1, count MAE, signed count bias, Dice/AJI/PQ, and the time spent in training and validation as the primary fold comparison. Read calibrated P/R/F1 separately as a threshold diagnostic. The validation plot shows mean precision, recall, and F1 at the fixed 0.10 cutoff with the fold-to-fold range; use it to see whether gains persist instead of being carried by one fold. Watch whether empty-patch sampling improves precision without collapsing recall. Check whether the NaN guard reports an image and loss component.”</p>
-<p>“For Stage 1, the held-out tile viewer now labels matched predictions, false positives, and missed CSV centres separately and prints the tile P/R/F1. Use it to identify whether the dominant error is duplicate peaks, missed faint cells, or localization beyond the matching radius. For Stage 2, compare seam metrics with interior metrics and inspect examples where two close detections were retained or merged. A small set of reviewed examples is important because a good global count can hide a bad instance map.”</p>
-<p>“Before presenting a strong biological segmentation claim, manually trace a small, representative set of cells—especially touching nuclei, faint stain, very small or large nuclei, and image borders. Use those masks as a separate contour-quality check. Also confirm that the fold group corresponds to patient or case, not merely image filename, when that metadata is available.”</p>
-<p>“The goal is not to force every metric upward by changing a threshold until the validation set looks good. The goal is to improve the actual errors, keep comparisons fair, report limitations, and show that performance repeats across unseen groups.”</p>
-<h2>16. Further improvements that need a data-informed follow-up</h2>
-<p>These are the next high-value experiments after the changed notebook has been run. They are deliberately separated from the implemented fixes because their benefit depends on the actual slide distribution and label meaning.</p>
-<ol>
-<li><strong>Create a small manually traced validation set.</strong> Trace representative nuclei, including touching, faint, large, small, and border cases. Keep it separate from training. This is the step that makes Dice, AJI, and PQ meaningful as true contour scores. The current caliper circles can remain weak training labels, but they should not be the only evidence of segmentation quality.</li>
-<li><strong>Split by patient or case.</strong> The current group key is the image filename stem. If one patient contributes several images, use the patient/case ID as the group so related slides cannot appear in both train and validation folds.</li>
-<li><strong>Benchmark a domain-relevant pretrained segmenter.</strong> HoVer-Net or HoLy-Net is a stronger architecture reference for touching nuclei than the compact centre-plus-radius decoder. Compare the same image groups, centre-match rule, fixed cutoff, and manually traced masks. Published scores from another stain or institution are reference points, not expected scores for this BCL6 task.</li>
-<li><strong>Tune the operating cutoff on separate calibration data.</strong> The calibrated score in a fold is selected from that fold’s validation examples. The fixed-cutoff line helps expose this. For a more independent deployment estimate, reserve calibration groups inside the training side or use a nested validation design, then evaluate the chosen cutoff on untouched outer groups.</li>
-<li><strong>Review false positives and false negatives by type.</strong> After a run, inspect only a small, authorized set of overlays and make a short error table: stain texture, debris, overlapping nuclei, weak/fragmented nuclei, crop seams, and label-coordinate mismatch. Use this to choose hard-negative sampling and augmentation changes instead of increasing every loss weight at once.</li>
-<li><strong>Ablate centre peak suppression.</strong> The decoder now has a conservative four-pixel minimum distance to remove almost-coincident peaks. Compare it with suppression disabled and a six-pixel setting on identical held-out folds. Keep a setting only if the reduction in false positives does not cause a meaningful recall loss, then confirm it on Stage 2 seam metrics.</li>
-<li><strong>Check the caliper interpretation and coordinate alignment.</strong> Confirm whether the caliper values are diameters or radii, whether image coordinates use the same origin and scaling as the image file, and whether missing measurements are common. A wrong conversion changes every pseudo-mask radius and can depress all three mask metrics even when centre detection is good.</li>
-<li><strong>Compare instance-aware decoders.</strong> The present decoder assigns foreground pixels to the nearest predicted centre inside a radius and falls back to a circle when foreground support is weak. This is fast and simple, but its shape family is limited. Once trusted masks are available, compare a HoVer-Net-style centre-distance representation or a contour/embedding head to test whether touching nuclei separate better and AJI/PQ rise for the right reason.</li>
-</ol>
-<p>“These steps distinguish model changes from measurement fixes. Better matching can correct reported P/R/F1. More appropriate training examples can change predictions. Manually traced masks and correct case grouping determine whether the resulting scores support a trustworthy claim.”</p>
-<h2>17. Stage 3: BCL6 classification</h2>
-<p><strong>Speaker notes</strong></p>
-<p>“Stage 3 is optional in the IMDA brief. It starts once the system can identify individual cells, then classifies each cell as BCL6 positive or negative. This stage adds a new label to each Stage 2 instance; it does not replace cell detection or segmentation.”</p>
-<p>“Research gives us a close design reference. DeepLIIF is a cell-level IHC quantification pipeline that segments cells and classifies positive and negative staining, and its paper includes BCL6 examples. It uses a more ambitious multi-task approach, so we should treat it as a reference rather than assume its scores transfer to our slides: https://pmc.ncbi.nlm.nih.gov/articles/PMC9477216/.”</p>
-<p>“BCL6 is evaluated as a nuclear stain. A first explainable baseline can measure DAB optical density within an annotated nucleus, with hematoxylin and local context as supporting features. Then compare that baseline with a crop CNN using RGB and RGB plus H/DAB channels. The pathologist’s CSV labels should supervise the classifier; colour thresholds are only a baseline.”</p>
-<p>“Split by patient or case before creating cell crops. Cells from the same slide are highly related, so splitting cells randomly would put near-duplicates in training and validation. If the only available grouping is image filename, use image-level grouping and state that limitation. The digital pathology reproducibility study discusses leakage, stain variation, and split methodology: https://journals.plos.org/digitalhealth/article?id=10.1371/journal.pdig.0000145.”</p>
-<p>“Evaluate positive-class precision, recall and F1, specificity, balanced accuracy, confusion matrix and PR-AUC. After the cell classifier looks reliable on held-out groups, run the complete pipeline and report the percentage of positive cells by image. Calibrate the decision threshold on training-side calibration groups and retain an uncertain category for ambiguous predictions.”</p>
-<p>“Before enabling the Stage 3 training switch, confirm locally that the CSV’s class field means BCL6 status and that the configurable positive/negative map covers its values. The cell stops if it encounters unrecognized labels. We have not inspected the private CSVs. The current caliper circles can help define crops, but they are not verified cell boundaries; a small manually traced review set is needed for claims about contour quality.”</p>
-<p>“Current Stage 3 defaults are RGB plus approximate H/DAB channels, 96-pixel cell crops, a 1.5× radius context margin, and the caliper-derived nucleus prior enabled. The group key defaults to source image; set it to patient/case ID if that field exists. Cross-validation allows up to five folds and automatically reduces the number when there are fewer independent groups for either class. Each fold is checked to ensure both classes occur in train and validation. The epoch cap is ten, with early stopping after three non-improving epochs. The fixed decision threshold is 0.50, and predictions within 0.10 of that threshold are marked uncertain. These are code defaults, not validated performance settings.</p>
-<p>“When <code>STAGE3_RUN_TRAINING</code> stays false, the Stage 3 section defines the classifier and prints instructions; it does not build additional labelled crop records or train the classifier. The earlier Stage 1 and Stage 2 sections have already loaded the project inputs. If Stage 3 is enabled, it reads the configured class/coordinate fields, builds cell crops, runs grouped CV, refits on labelled cells, and saves a Stage 3 checkpoint. It also provides an inference helper for classifying Stage 2 detections. Stage 3 is at the end of the combined cell, so enabling it adds work after Stage 1 and Stage 2.”</p>
-<p>“The executable Stage 3 cell includes a compact crop CNN, with either RGB or RGB plus approximate H/DAB channels. When the optional caliper-derived nucleus-prior channel is enabled, the v5 model now actually uses it twice: it pools feature evidence inside the estimated nucleus and in a surrounding perinuclear ring. This fixes a wiring gap in the previous version, where the prior channel was supplied but the model constructor left prior-aware pooling disabled. During crop-centre jitter, the estimated nucleus location is offset inside the crop; flips and rotations transform that offset along with the pixels. The true estimated nucleus radius is also kept separate from the randomized crop scale. These changes keep the spatial cue matched to the augmented cell. The prior is still a circle estimated from calipers, not a true cell mask.”</p>
-<p>“Training-only crop-centre and radius jitter simulate modest Stage 2 localization and scale errors, while brightness, channel-gain, and H/DAB changes provide stain robustness. It assigns whole image or case groups to folds and greedily balances positive and negative cell counts between folds. It reduces the number of folds if too few independent groups contain one of the classes, then checks that each validation fold has positives and negatives. The loss combines a capped positive-class correction with clipped inverse-square-root case weights, computed from the training partition only. This reduces the influence of very large cases while avoiding full inverse-frequency weighting. A learning-rate scheduler responds to validation average precision, and the code stops if gradients become non-finite. These are plausible improvements to generalization and training stability, not guaranteed score increases.”</p>
-<p>“The CV report keeps the conventional probability threshold of 0.50 so runs are comparable. It also reports macro recall, specificity, and balanced accuracy averaged by case, so a slide with many annotated cells does not dominate those case-level summaries. For an operating-point diagnostic, each fold receives a decision threshold selected from the other folds’ OOF predictions; the notebook reports that cross-fold view separately from the fixed 0.50 results. It still saves a pooled-OOF F1 threshold for the final refit model to use, but its tuned score is not an independent test estimate. Cross-fold calibration reduces direct reuse of a fold’s own labels for its threshold, but checkpoint selection is still validation-driven and training partitions overlap. Use nested cross-validation or separate patient/case test data for final performance claims. Checkpoints now include an architecture version as well as input mode, prior-channel choice, crop size, and context factor. The v5 code writes to a fresh checkpoint folder and rejects incompatible older Stage 3 weights. Inference reconstructs the same optional prior from the Stage 2 box, then classifies detections in batches. CV crops are still centred on labelled cell centroids, with jitter used to approximate localization error. The DAB-intensity baseline and a full end-to-end held-out evaluation that accounts for missed detections and false detections remain planned work.”</p></div></details>
-      </section>
-      <footer><div class="footer-line"></div><b>Project 2 · Cell detection and counting</b><br>Built as an offline explainer for the notebook. It does not load model weights or access images, CSVs, or checkpoints.</footer>
+<footer><div class="footer-line"></div><b>Project 2 · Cell detection and counting</b><br>Built as an offline explainer for the notebook. It does not load model weights or access images, CSVs, or checkpoints.</footer>
     </div>
   </main>
   <script>
@@ -873,6 +446,62 @@
       document.getElementById('toyCounts').textContent='TP '+tp+' · FP '+fp+' · FN '+fn;
     }
     slider.addEventListener('input',updateToy); updateToy();
+    const modelTour=[
+      {
+        title:'Prepare the tile',
+        body:'The dataset supplies a 512 × 512 colour crop as numbers scaled to 0–1. A crop can contain many cells or no labelled cells. Each image group stays attached to its own fold so related tiles do not leak between training and validation.',
+        input:'512 × 512 RGB tile', action:'Scale colour values; keep the tile’s image group', output:'A standardised image tensor',
+        analogy:'This is one small window cut from a very large microscope slide; the network processes windows because the whole slide is too large to fit at once.'
+      },
+      {
+        title:'Build learning targets',
+        body:'During training, every annotated centre teaches several related tasks. A small Gaussian hill marks the centre, an offset stores the fractional position within the 2-pixel grid, the measured radius becomes a size target, and a caliper-derived disk marks approximate foreground. A matching Gaussian density kernel is normalised so each labelled cell contributes one unit of count.',
+        input:'Centre coordinates and caliper radius', action:'Draw centre/density peaks; encode offset, radius and disk', output:'Six target maps on a 256 × 256 grid',
+        analogy:'Instead of telling the model only “cell here”, the training labels give it a short set of clues: centre, nearby cell area, exact sub-grid position, expected size and one count unit.'
+      },
+      {
+        title:'Extract visual features',
+        body:'The forward pass first average-pools the tile by two, reducing it from 512 × 512 to 256 × 256. A 3 × 3 convolution builds 24 feature channels. These channels are learned pattern maps: some can respond to edges, stain texture or small structures, but they are not hand-assigned cell rules.',
+        input:'512 × 512 image tensor', action:'Average-pool ×2; apply 3 × 3 convolution', output:'24 feature maps at 256 × 256',
+        analogy:'The first layers turn raw colour into working maps, much like separating a photo into useful clues before making a decision.'
+      },
+      {
+        title:'Mix tissue context',
+        body:'Parallel depthwise convolution branches use dilation rates 1, 2 and 4. Dilation spaces out the convolution samples, so each branch sees a different neighbourhood without another image downscale. The branches are fused; a learned gate controls how much context to add back through a residual connection. A final depthwise block refines the features.',
+        input:'24 learned feature channels', action:'Read three neighbourhood sizes; fuse and gate them', output:'Context-aware feature maps',
+        analogy:'A cell-like spot is easier to judge when the model can also consider what surrounds it. The branches give it a near, medium and wider view.'
+      },
+      {
+        title:'Predict six maps',
+        body:'A 1 × 1 convolution produces six values at every output-grid location: centre and foreground logits, horizontal and vertical offsets, radius, and density. Sigmoid turns centre/foreground logits into probabilities; offsets are bounded to half a grid step; radius is scaled into the configured 2–40 pixel range; softplus makes density non-negative. One grid step equals two pixels in the original tile.',
+        input:'Context-aware feature maps', action:'Apply a 1 × 1 head; convert raw values to usable ranges', output:'Centre · foreground · x/y offset · radius · density',
+        analogy:'Imagine six transparent maps laid over the same tile. Each map answers a different question, but they all refer to matching locations.'
+      },
+      {
+        title:'Decode a cell instance',
+        body:'The decoder combines centre confidence with modest foreground and density support, keeps local peaks, then removes near-duplicate centres closer than 4 pixels. It applies the chosen confidence cutoff and refines each centre with its learned offset. Foreground pixels are assigned to the nearest retained centre when they fall within that centre’s predicted radius. If the resulting mask covers too little of the estimated disk, the decoder falls back to a circle. The mask extent gives the bounding box; each retained centre is one detected cell and contributes one to the instance count.',
+        input:'Six prediction maps', action:'Score peaks → remove duplicates → assign pixels → make box', output:'Centre, confidence, approximate mask, box, count',
+        analogy:'The centre is the anchor. The radius limits which foreground pixels belong to it; the box is then drawn around the pixels assigned to that cell.'
+      }
+    ];
+    let activeTourStep=0;
+    function selectTourStep(index){
+      activeTourStep=Math.max(0,Math.min(modelTour.length-1,index));
+      const item=modelTour[activeTourStep];
+      document.querySelectorAll('.tour-step').forEach((button,i)=>button.setAttribute('aria-pressed',String(i===activeTourStep)));
+      document.getElementById('tourTitle').textContent=item.title;
+      document.getElementById('tourCounter').textContent=`STEP ${activeTourStep+1} OF ${modelTour.length}`;
+      document.getElementById('tourBody').textContent=item.body;
+      document.getElementById('tourInput').textContent=item.input;
+      document.getElementById('tourAction').textContent=item.action;
+      document.getElementById('tourOutput').textContent=item.output;
+      document.getElementById('tourAnalogy').textContent=item.analogy;
+      document.getElementById('tourPrev').disabled=activeTourStep===0;
+      document.getElementById('tourNext').disabled=activeTourStep===modelTour.length-1;
+    }
+    document.querySelectorAll('.tour-step').forEach(button=>button.addEventListener('click',()=>selectTourStep(Number(button.dataset.tour))));
+    document.getElementById('tourPrev').addEventListener('click',()=>selectTourStep(activeTourStep-1));
+    document.getElementById('tourNext').addEventListener('click',()=>selectTourStep(activeTourStep+1));
     const loopInfo=[
       ['Load a batch','The dataset returns a list of image tensors and matching dictionaries of cell targets. Images are augmented in training; validation data is left unchanged.'],
       ['Forward pass','The patch is stacked into a batch, downsampled by two, and passed through the compact encoder and six-channel head: centre, foreground, x/y offsets, radius and density. Parallel dilation-1/2/4 branches supply local and wider context.'],
